@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Manual Image Enhancer</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        canvas {
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            max-width: 100%;
+            height: auto;
+            background: white;
+        }
+        .slider-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            color: white;
+            margin-bottom: 1rem;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: rgba(255,255,255,0.3);
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            border: none;
+        }
+        .value-display {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            padding: 0.5rem;
+            background: rgba(255,255,255,0.2);
+            border-radius: 0.5rem;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body class="p-4">
+    <div class="max-w-7xl mx-auto">
+        <div class="bg-white rounded-2xl shadow-xl p-8">
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-6">
+                <button onclick="window.location.href='index.html'" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg">
+                    ← Back to Home
+                </button>
+                <h1 class="text-3xl font-bold text-gray-800">🎨 Complete Manual Enhancer</h1>
+                <div class="w-32"></div>
+            </div>
+
+            <!-- Upload -->
+            <div class="text-center mb-6">
+                <label for="image-upload" class="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-8 rounded-lg cursor-pointer inline-block shadow-lg">
+                    📤 Upload Image
+                </label>
+                <input type="file" id="image-upload" accept="image/*" class="hidden">
+                <p id="file-name" class="mt-2 text-gray-600 text-sm"></p>
+            </div>
+
+            <!-- Instructions -->
+            <div id="instructions" class="hidden mb-6 bg-blue-100 border-l-4 border-blue-500 p-4 rounded">
+                <p class="font-semibold text-blue-800">💡 How to use:</p>
+                <ol class="list-decimal list-inside text-blue-700 text-sm mt-2 space-y-1">
+                    <li>Adjust the sliders below to your desired values</li>
+                    <li>Changes apply automatically when you release the slider</li>
+                    <li>Or click "Apply All Changes" to process manually</li>
+                    <li>Use "Reset All" to start over</li>
+                </ol>
+            </div>
+
+            <!-- Main Content -->
+            <div id="main-content" class="hidden">
+                <div class="grid lg:grid-cols-3 gap-6">
+                    <!-- Left: Controls -->
+                    <div class="lg:col-span-1 space-y-4">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4">🎛️ Adjustment Controls</h2>
+
+                        <!-- Brightness -->
+                        <div class="slider-container">
+                            <label class="block font-semibold mb-2">☀️ Brightness</label>
+                            <input type="range" id="brightness" min="-50" max="50" value="0" step="1">
+                            <div class="value-display" id="brightness-value">0</div>
+                            <p class="text-xs mt-2 opacity-80">Adjust overall image brightness</p>
+                        </div>
+
+                        <!-- Contrast -->
+                        <div class="slider-container">
+                            <label class="block font-semibold mb-2">🌓 Contrast</label>
+                            <input type="range" id="contrast" min="0" max="100" value="0" step="1">
+                            <div class="value-display" id="contrast-value">0%</div>
+                            <p class="text-xs mt-2 opacity-80">Enhance contrast using fuzzy logic</p>
+                        </div>
+
+                        <!-- Noise Reduction -->
+                        <div class="slider-container">
+                            <label class="block font-semibold mb-2">🔧 Noise Reduction</label>
+                            <input type="range" id="noise" min="0" max="100" value="0" step="1">
+                            <div class="value-display" id="noise-value">0%</div>
+                            <p class="text-xs mt-2 opacity-80">Remove image noise and grain</p>
+                        </div>
+
+                        <!-- Sharpness -->
+                        <div class="slider-container">
+                            <label class="block font-semibold mb-2">✨ Sharpness</label>
+                            <input type="range" id="sharpness" min="0" max="100" value="0" step="1">
+                            <div class="value-display" id="sharpness-value">0%</div>
+                            <p class="text-xs mt-2 opacity-80">Sharpen edges and details</p>
+                        </div>
+
+                        <!-- Saturation -->
+                        <div class="slider-container">
+                            <label class="block font-semibold mb-2">🎨 Saturation</label>
+                            <input type="range" id="saturation" min="-50" max="50" value="0" step="1">
+                            <div class="value-display" id="saturation-value">0</div>
+                            <p class="text-xs mt-2 opacity-80">Adjust color intensity</p>
+                        </div>
+
+                        <!-- Blur -->
+                        <div class="slider-container">
+                            <label class="block font-semibold mb-2">💫 Blur</label>
+                            <input type="range" id="blur" min="0" max="10" value="0" step="1">
+                            <div class="value-display" id="blur-value">0</div>
+                            <p class="text-xs mt-2 opacity-80">Apply gaussian blur</p>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="space-y-2">
+                            <button id="apply-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg shadow-lg">
+                                ✅ Apply All Changes
+                            </button>
+                            <button id="reset-btn" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 rounded-lg">
+                                🔄 Reset All
+                            </button>
+                            <button id="download-btn" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 rounded-lg">
+                                📥 Download Image
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right: Image Preview -->
+                    <div class="lg:col-span-2">
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div class="text-center">
+                                <h3 class="text-xl font-semibold mb-3">Original</h3>
+                                <canvas id="original-canvas"></canvas>
+                            </div>
+                            <div class="text-center">
+                                <h3 class="text-xl font-semibold mb-3">Enhanced</h3>
+                                <canvas id="enhanced-canvas"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Current Settings Display -->
+                        <div class="mt-6 bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-xl">
+                            <h4 class="font-bold text-gray-800 mb-3">📊 Current Settings</h4>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                                <div class="bg-white p-2 rounded">
+                                    <span class="text-gray-600">Brightness:</span>
+                                    <span class="font-bold" id="display-brightness">0</span>
+                                </div>
+                                <div class="bg-white p-2 rounded">
+                                    <span class="text-gray-600">Contrast:</span>
+                                    <span class="font-bold" id="display-contrast">0%</span>
+                                </div>
+                                <div class="bg-white p-2 rounded">
+                                    <span class="text-gray-600">Noise:</span>
+                                    <span class="font-bold" id="display-noise">0%</span>
+                                </div>
+                                <div class="bg-white p-2 rounded">
+                                    <span class="text-gray-600">Sharpness:</span>
+                                    <span class="font-bold" id="display-sharpness">0%</span>
+                                </div>
+                                <div class="bg-white p-2 rounded">
+                                    <span class="text-gray-600">Saturation:</span>
+                                    <span class="font-bold" id="display-saturation">0</span>
+                                </div>
+                                <div class="bg-white p-2 rounded">
+                                    <span class="text-gray-600">Blur:</span>
+                                    <span class="font-bold" id="display-blur">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const originalCanvas = document.getElementById('original-canvas');
+        const enhancedCanvas = document.getElementById('enhanced-canvas');
+        const originalCtx = originalCanvas.getContext('2d');
+        const enhancedCtx = enhancedCanvas.getContext('2d');
+        let originalImage = null;
+        let originalImageData = null;
+
+        // Sliders
+        const sliders = {
+            brightness: document.getElementById('brightness'),
+            contrast: document.getElementById('contrast'),
+            noise: document.getElementById('noise'),
+            sharpness: document.getElementById('sharpness'),
+            saturation: document.getElementById('saturation'),
+            blur: document.getElementById('blur')
+        };
+
+        // Upload handler
+        document.getElementById('image-upload').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            document.getElementById('file-name').textContent = file.name;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                originalImage = new Image();
+                originalImage.onload = () => {
+                    originalCanvas.width = originalImage.width;
+                    originalCanvas.height = originalImage.height;
+                    enhancedCanvas.width = originalImage.width;
+                    enhancedCanvas.height = originalImage.height;
+
+                    originalCtx.drawImage(originalImage, 0, 0);
+                    originalImageData = originalCtx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
+                    
+                    enhancedCtx.drawImage(originalImage, 0, 0);
+
+                    document.getElementById('main-content').classList.remove('hidden');
+                    document.getElementById('instructions').classList.remove('hidden');
+                };
+                originalImage.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Update value displays
+        Object.keys(sliders).forEach(key => {
+            sliders[key].addEventListener('input', (e) => {
+                const value = e.target.value;
+                const suffix = ['brightness', 'saturation', 'blur'].includes(key) ? '' : '%';
+                document.getElementById(`${key}-value`).textContent = value + suffix;
+                document.getElementById(`display-${key}`).textContent = value + suffix;
+            });
+        });
+
+        // Apply button
+        document.getElementById('apply-btn').addEventListener('click', applyAllFilters);
+        
+        // Real-time preview on slider change
+        Object.values(sliders).forEach(slider => {
+            slider.addEventListener('change', applyAllFilters);
+        });
+
+        // Reset button
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            Object.values(sliders).forEach(slider => {
+                slider.value = ['brightness', 'saturation'].includes(slider.id) ? 0 : 0;
+                slider.dispatchEvent(new Event('input'));
+            });
+            if (originalImageData) {
+                enhancedCtx.putImageData(originalImageData, 0, 0);
+            }
+        });
+
+        // Download button
+        document.getElementById('download-btn').addEventListener('click', () => {
+            try {
+                // Get the enhanced canvas data
+                const dataURL = enhancedCanvas.toDataURL('image/png');
+                
+                // Create download link
+                const link = document.createElement('a');
+                link.download = 'enhanced_image.png';
+                link.href = dataURL;
+                
+                // Trigger download
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                console.log('Download triggered successfully');
+            } catch (error) {
+                console.error('Download error:', error);
+                alert('Error downloading image: ' + error.message);
+            }
+        });
+
+        function applyAllFilters() {
+            if (!originalImageData) {
+                console.log('No original image data');
+                return;
+            }
+
+            let imageData = new ImageData(
+                new Uint8ClampedArray(originalImageData.data),
+                originalImageData.width,
+                originalImageData.height
+            );
+
+            // Apply filters in optimal order
+            const brightness = parseInt(sliders.brightness.value);
+            const contrast = parseInt(sliders.contrast.value);
+            const noise = parseInt(sliders.noise.value);
+            const sharpness = parseInt(sliders.sharpness.value);
+            const saturation = parseInt(sliders.saturation.value);
+            const blur = parseInt(sliders.blur.value);
+
+            console.log('Applying filters:', { brightness, contrast, noise, sharpness, saturation, blur });
+
+            // 1. Noise reduction first
+            if (noise > 0) {
+                imageData = applyNoiseReduction(imageData, noise);
+            }
+
+            // 2. Blur if needed
+            if (blur > 0) {
+                imageData = applyBlur(imageData, blur);
+            }
+
+            // 3. Brightness adjustment
+            if (brightness !== 0) {
+                imageData = applyBrightness(imageData, brightness);
+            }
+
+            // 4. Contrast enhancement
+            if (contrast > 0) {
+                imageData = applyContrast(imageData, contrast);
+            }
+
+            // 5. Saturation
+            if (saturation !== 0) {
+                imageData = applySaturation(imageData, saturation);
+            }
+
+            // 6. Sharpness last
+            if (sharpness > 0) {
+                imageData = applySharpness(imageData, sharpness);
+            }
+
+            enhancedCtx.putImageData(imageData, 0, 0);
+            console.log('Filters applied successfully');
+        }
+
+        function applyBrightness(imageData, adjustment) {
+            const data = new Uint8ClampedArray(imageData.data);
+            const factor = adjustment * 2.55;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                data[i] = Math.min(255, Math.max(0, data[i] + factor));
+                data[i+1] = Math.min(255, Math.max(0, data[i+1] + factor));
+                data[i+2] = Math.min(255, Math.max(0, data[i+2] + factor));
+            }
+            
+            return new ImageData(data, imageData.width, imageData.height);
+        }
+
+        function applyContrast(imageData, strength) {
+            const data = new Uint8ClampedArray(imageData.data);
+            const factor = strength / 100;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                const gray = (data[i] + data[i+1] + data[i+2]) / 3;
+                const target = gray < 85 ? 25 : gray < 170 ? 140 : 230;
+                const ratio = (target / (gray + 0.001) - 1) * factor + 1;
+                
+                data[i] = Math.min(255, Math.max(0, data[i] * ratio));
+                data[i+1] = Math.min(255, Math.max(0, data[i+1] * ratio));
+                data[i+2] = Math.min(255, Math.max(0, data[i+2] * ratio));
+            }
+            
+            return new ImageData(data, imageData.width, imageData.height);
+        }
+
+        function applyNoiseReduction(imageData, strength) {
+            const data = new Uint8ClampedArray(imageData.data);
+            const result = new Uint8ClampedArray(data);
+            const w = imageData.width, h = imageData.height;
+            const factor = strength / 100 * 0.7;
+
+            for (let y = 1; y < h - 1; y++) {
+                for (let x = 1; x < w - 1; x++) {
+                    const idx = (y * w + x) * 4;
+                    let r = 0, g = 0, b = 0;
+                    
+                    for (let dy = -1; dy <= 1; dy++) {
+                        for (let dx = -1; dx <= 1; dx++) {
+                            const nIdx = ((y+dy) * w + (x+dx)) * 4;
+                            r += data[nIdx];
+                            g += data[nIdx+1];
+                            b += data[nIdx+2];
+                        }
+                    }
+                    
+                    result[idx] = data[idx] * (1-factor) + (r/9) * factor;
+                    result[idx+1] = data[idx+1] * (1-factor) + (g/9) * factor;
+                    result[idx+2] = data[idx+2] * (1-factor) + (b/9) * factor;
+                }
+            }
+            
+            return new ImageData(result, w, h);
+        }
+
+        function applySharpness(imageData, strength) {
+            const data = new Uint8ClampedArray(imageData.data);
+            const result = new Uint8ClampedArray(data);
+            const w = imageData.width, h = imageData.height;
+            const factor = strength / 100 * 0.5;
+
+            for (let y = 1; y < h - 1; y++) {
+                for (let x = 1; x < w - 1; x++) {
+                    const idx = (y * w + x) * 4;
+                    
+                    for (let c = 0; c < 3; c++) {
+                        const center = data[idx + c];
+                        let sum = 0;
+                        
+                        for (let dy = -1; dy <= 1; dy++) {
+                            for (let dx = -1; dx <= 1; dx++) {
+                                if (dx === 0 && dy === 0) continue;
+                                sum += data[((y+dy)*w+(x+dx))*4 + c];
+                            }
+                        }
+                        
+                        const avg = sum / 8;
+                        result[idx + c] = Math.min(255, Math.max(0, center + (center - avg) * factor));
+                    }
+                }
+            }
+            
+            return new ImageData(result, w, h);
+        }
+
+        function applySaturation(imageData, adjustment) {
+            const data = new Uint8ClampedArray(imageData.data);
+            const factor = 1 + (adjustment / 50);
+            
+            for (let i = 0; i < data.length; i += 4) {
+                const gray = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
+                
+                data[i] = Math.min(255, Math.max(0, gray + (data[i] - gray) * factor));
+                data[i+1] = Math.min(255, Math.max(0, gray + (data[i+1] - gray) * factor));
+                data[i+2] = Math.min(255, Math.max(0, gray + (data[i+2] - gray) * factor));
+            }
+            
+            return new ImageData(data, imageData.width, imageData.height);
+        }
+
+        function applyBlur(imageData, radius) {
+            const data = new Uint8ClampedArray(imageData.data);
+            const result = new Uint8ClampedArray(data);
+            const w = imageData.width, h = imageData.height;
+
+            for (let y = radius; y < h - radius; y++) {
+                for (let x = radius; x < w - radius; x++) {
+                    const idx = (y * w + x) * 4;
+                    let r = 0, g = 0, b = 0, count = 0;
+                    
+                    for (let dy = -radius; dy <= radius; dy++) {
+                        for (let dx = -radius; dx <= radius; dx++) {
+                            const nIdx = ((y+dy) * w + (x+dx)) * 4;
+                            r += data[nIdx];
+                            g += data[nIdx+1];
+                            b += data[nIdx+2];
+                            count++;
+                        }
+                    }
+                    
+                    result[idx] = r / count;
+                    result[idx+1] = g / count;
+                    result[idx+2] = b / count;
+                }
+            }
+            
+            return new ImageData(result, w, h);
+        }
+    </script>
+</body>
+</html>

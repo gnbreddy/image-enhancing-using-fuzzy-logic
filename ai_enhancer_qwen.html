@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Auto Enhancer - Qwen2-VL Integration</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✨</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        canvas {
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            max-width: 100%;
+            height: auto;
+            background: white;
+        }
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-connected { background: #10b981; animation: pulse 2s infinite; }
+        .status-disconnected { background: #ef4444; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .thinking { animation: spin 2s linear infinite; }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="max-w-7xl w-full">
+        <div class="bg-white p-8 rounded-2xl shadow-xl">
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-6">
+                <button onclick="window.location.href='index.html'" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg">
+                    ← Back
+                </button>
+                <h1 class="text-3xl font-bold text-gray-800">✨ AI Auto Enhancer</h1>
+                <div class="w-32"></div>
+            </div>
+
+            <!-- Connection Status -->
+            <div class="mb-6 bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-gray-800">🤖 Qwen2-VL 8B (Local)</h3>
+                    <div class="flex items-center">
+                        <span id="status-dot" class="status-dot status-disconnected"></span>
+                        <span id="status-text" class="text-sm font-semibold text-gray-600">Checking...</span>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">LM Studio Server URL</label>
+                    <input type="text" id="server-url" value="http://127.0.0.1:1234" 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <button id="test-connection" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg">
+                    🔌 Test Connection
+                </button>
+
+                <div class="mt-4 bg-blue-100 border-l-4 border-blue-500 p-4 text-sm">
+                    <p class="font-semibold text-blue-800 mb-2">📝 Quick Setup:</p>
+                    <ol class="list-decimal list-inside space-y-1 text-blue-700">
+                        <li>Open LM Studio</li>
+                        <li>Load your Qwen2-VL 8B model</li>
+                        <li>Go to "Local Server" → Start Server</li>
+                        <li>Click "Test Connection" above</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- Upload -->
+            <div class="flex flex-col items-center mb-6">
+                <label for="image-upload" class="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-semibold py-3 px-8 rounded-lg cursor-pointer shadow-lg">
+                    📤 Upload Image
+                </label>
+                <input type="file" id="image-upload" accept="image/*" class="hidden">
+                <p id="file-name" class="mt-2 text-gray-600 text-sm"></p>
+            </div>
+
+            <!-- AI Analysis -->
+            <div id="analysis-section" class="hidden mb-8">
+                <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl">
+                    <h3 class="font-bold text-gray-800 mb-4">🤖 Qwen2-VL Analysis</h3>
+                    <div id="ai-thinking" class="hidden text-center py-4">
+                        <div class="thinking text-5xl mb-2">🔄</div>
+                        <p class="text-gray-600 font-semibold">AI analyzing image...</p>
+                        <p class="text-sm text-gray-500 mt-2">This may take 10-30 seconds</p>
+                    </div>
+                    <div id="ai-results"></div>
+                </div>
+            </div>
+
+            <!-- Comparison -->
+            <div id="comparison-section" class="hidden">
+                <div class="grid md:grid-cols-2 gap-8 mb-6">
+                    <div class="text-center">
+                        <h2 class="text-xl font-semibold mb-3">Original</h2>
+                        <canvas id="original-canvas"></canvas>
+                    </div>
+                    <div class="text-center">
+                        <h2 class="text-xl font-semibold mb-3">Enhanced</h2>
+                        <canvas id="enhanced-canvas"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-green-50 p-6 rounded-xl mb-6">
+                    <h3 class="font-bold text-gray-800 mb-3">📊 Enhancement Report</h3>
+                    <div id="report"></div>
+                </div>
+
+                <div class="text-center">
+                    <button id="download-btn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg">
+                        📥 Download Enhanced Image
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let serverUrl = 'http://127.0.0.1:1234';
+        let isConnected = false;
+        const originalCanvas = document.getElementById('original-canvas');
+        const enhancedCanvas = document.getElementById('enhanced-canvas');
+        const originalCtx = originalCanvas.getContext('2d');
+        const enhancedCtx = enhancedCanvas.getContext('2d');
+
+        // Test connection
+        document.getElementById('test-connection').addEventListener('click', testConnection);
+
+        async function testConnection() {
+            serverUrl = document.getElementById('server-url').value;
+            console.log('Testing connection to:', serverUrl);
+            try {
+                const response = await fetch(`${serverUrl}/v1/models`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                console.log('Response status:', response.status);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Available models:', data);
+                    isConnected = true;
+                    updateStatus(true, 'Connected to Qwen2-VL');
+                    alert('✅ Connected successfully!\n\nModels available: ' + (data.data?.length || 0));
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                console.error('Connection error:', error);
+                isConnected = false;
+                updateStatus(false, 'Not connected');
+                alert(`❌ Cannot connect to ${serverUrl}\n\nError: ${error.message}\n\nMake sure:\n1. LM Studio is running\n2. Server is started (Local Server tab)\n3. Qwen2-VL model is loaded\n4. CORS is enabled in LM Studio`);
+            }
+        }
+
+        function updateStatus(connected, text) {
+            const dot = document.getElementById('status-dot');
+            const statusText = document.getElementById('status-text');
+            dot.className = `status-dot ${connected ? 'status-connected' : 'status-disconnected'}`;
+            statusText.textContent = text;
+            statusText.className = `text-sm font-semibold ${connected ? 'text-green-600' : 'text-red-600'}`;
+        }
+
+        // Image upload
+        document.getElementById('image-upload').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (!isConnected) {
+                alert('⚠️ Please connect to LM Studio first!');
+                return;
+            }
+
+            document.getElementById('file-name').textContent = file.name;
+
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                const img = new Image();
+                img.onload = async () => {
+                    originalCanvas.width = img.width;
+                    originalCanvas.height = img.height;
+                    enhancedCanvas.width = img.width;
+                    enhancedCanvas.height = img.height;
+                    originalCtx.drawImage(img, 0, 0);
+
+                    document.getElementById('analysis-section').classList.remove('hidden');
+                    document.getElementById('ai-thinking').classList.remove('hidden');
+                    document.getElementById('ai-results').innerHTML = '';
+
+                    await analyzeWithQwen(event.target.result);
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        async function analyzeWithQwen(imageDataUrl) {
+            console.log('Starting Qwen analysis...');
+            console.log('Server URL:', serverUrl);
+            try {
+                const prompt = `Analyze this image for quality issues and provide enhancement recommendations.
+
+Evaluate:
+1. Contrast levels (0-100, where 100 is perfect)
+2. Noise level (0-100, where 0 is no noise)
+3. Sharpness (0-100, where 100 is very sharp)
+4. Brightness (-50 to +50, where 0 is perfect)
+
+Provide response in JSON format:
+{
+  "analysis": "brief overall assessment",
+  "metrics": {
+    "contrast": 0-100,
+    "noise": 0-100,
+    "sharpness": 0-100,
+    "brightness": -50 to 50
+  },
+  "issues": ["issue1", "issue2"],
+  "recommendations": {
+    "noise_reduction": {"apply": true/false, "strength": 0-100, "reason": "explanation"},
+    "contrast_enhancement": {"apply": true/false, "strength": 0-100, "reason": "explanation"},
+    "edge_correction": {"apply": true/false, "strength": 0-100, "reason": "explanation"},
+    "brightness_adjustment": {"apply": true/false, "adjustment": -50 to 50, "reason": "explanation"}
+  }
+}`;
+
+                console.log('Sending request to Qwen...');
+                const requestBody = {
+                    model: 'qwen/qwen3-vl-8b',
+                    messages: [{
+                        role: 'user',
+                        content: [
+                            { type: 'text', text: prompt },
+                            { type: 'image_url', image_url: { url: imageDataUrl } }
+                        ]
+                    }],
+                    max_tokens: 1500,
+                    temperature: 0.7
+                };
+                console.log('Request body:', requestBody);
+
+                const response = await fetch(`${serverUrl}/v1/chat/completions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
+
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Error response:', errorText);
+                    throw new Error(`Server error: ${response.status} - ${errorText}`);
+                }
+
+                const data = await response.json();
+                console.log('Qwen response:', data);
+                const aiText = data.choices[0].message.content;
+                console.log('AI text:', aiText);
+                
+                // Parse JSON
+                const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+                const analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : getFallbackAnalysis();
+
+                displayAnalysis(analysis);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('ai-thinking').classList.add('hidden');
+                document.getElementById('ai-results').innerHTML = `
+                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                        <p class="font-bold">Error: ${error.message}</p>
+                        <p class="text-sm mt-2">Using fallback analysis...</p>
+                    </div>
+                `;
+                setTimeout(() => displayAnalysis(getFallbackAnalysis()), 2000);
+            }
+        }
+
+        function getFallbackAnalysis() {
+            const imageData = originalCtx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
+            const data = imageData.data;
+            let sum = 0, min = 255, max = 0;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                const gray = (data[i] + data[i+1] + data[i+2]) / 3;
+                sum += gray;
+                min = Math.min(min, gray);
+                max = Math.max(max, gray);
+            }
+            
+            const avg = sum / (data.length / 4);
+            const contrast = max - min;
+            
+            return {
+                analysis: `Basic analysis: brightness ${Math.round(avg)}/255, contrast ${Math.round(contrast)}/255`,
+                metrics: { contrast: Math.round(contrast/2.55), noise: 40, sharpness: 60, brightness: Math.round((avg-127)/2.55) },
+                issues: contrast < 150 ? ['Low contrast'] : [],
+                recommendations: {
+                    noise_reduction: { apply: true, strength: 50, reason: 'Standard noise reduction' },
+                    contrast_enhancement: { apply: contrast < 150, strength: 70, reason: contrast < 150 ? 'Low contrast detected' : 'Minor adjustment' },
+                    edge_correction: { apply: true, strength: 50, reason: 'Standard sharpening' },
+                    brightness_adjustment: { apply: Math.abs(avg-127) > 30, adjustment: Math.round((127-avg)/5), reason: avg < 100 ? 'Too dark' : avg > 180 ? 'Too bright' : 'Good' }
+                }
+            };
+        }
+
+        function displayAnalysis(analysis) {
+            document.getElementById('ai-thinking').classList.add('hidden');
+            const results = document.getElementById('ai-results');
+            
+            let html = `
+                <div class="bg-white p-4 rounded-lg mb-3">
+                    <p class="font-bold mb-2">📋 Analysis:</p>
+                    <p class="text-sm text-gray-700">${analysis.analysis}</p>
+                </div>
+            `;
+
+            if (analysis.metrics) {
+                html += `
+                    <div class="bg-white p-4 rounded-lg mb-3">
+                        <p class="font-bold mb-2">📊 Quality Metrics:</p>
+                        <div class="grid grid-cols-2 gap-2 text-sm">
+                            <div>Contrast: <span class="font-bold">${analysis.metrics.contrast}%</span></div>
+                            <div>Noise: <span class="font-bold">${analysis.metrics.noise}%</span></div>
+                            <div>Sharpness: <span class="font-bold">${analysis.metrics.sharpness}%</span></div>
+                            <div>Brightness: <span class="font-bold">${analysis.metrics.brightness > 0 ? '+' : ''}${analysis.metrics.brightness}</span></div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (analysis.issues && analysis.issues.length > 0) {
+                html += `
+                    <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200 mb-3">
+                        <p class="font-bold mb-2 text-yellow-800">⚠️ Issues:</p>
+                        <ul class="text-sm space-y-1 text-yellow-700">
+                            ${analysis.issues.map(i => `<li>• ${i}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            const recs = analysis.recommendations;
+            html += `
+                <div class="bg-green-50 p-4 rounded-lg border border-green-200 mb-3">
+                    <p class="font-bold mb-2 text-green-800">💡 Recommendations:</p>
+                    <ul class="text-sm space-y-2 text-green-700">
+            `;
+
+            if (recs.noise_reduction?.apply) {
+                html += `<li>✓ Noise Reduction (${recs.noise_reduction.strength}%): ${recs.noise_reduction.reason}</li>`;
+            }
+            if (recs.brightness_adjustment?.apply) {
+                html += `<li>✓ Brightness (${recs.brightness_adjustment.adjustment > 0 ? '+' : ''}${recs.brightness_adjustment.adjustment}): ${recs.brightness_adjustment.reason}</li>`;
+            }
+            if (recs.contrast_enhancement?.apply) {
+                html += `<li>✓ Contrast (${recs.contrast_enhancement.strength}%): ${recs.contrast_enhancement.reason}</li>`;
+            }
+            if (recs.edge_correction?.apply) {
+                html += `<li>✓ Edge Correction (${recs.edge_correction.strength}%): ${recs.edge_correction.reason}</li>`;
+            }
+
+            html += `
+                    </ul>
+                </div>
+                <button id="start-enhance" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg">
+                    🚀 Apply AI Recommendations
+                </button>
+            `;
+
+            results.innerHTML = html;
+            document.getElementById('start-enhance').addEventListener('click', () => applyEnhancements(analysis));
+        }
+
+        function applyEnhancements(analysis) {
+            const imageData = originalCtx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
+            let result = imageData;
+            const recs = analysis.recommendations;
+
+            if (recs.noise_reduction?.apply) {
+                result = applyNoiseReduction(result, recs.noise_reduction.strength);
+            }
+            if (recs.brightness_adjustment?.apply) {
+                result = applyBrightness(result, recs.brightness_adjustment.adjustment);
+            }
+            if (recs.contrast_enhancement?.apply) {
+                result = applyContrast(result, recs.contrast_enhancement.strength);
+            }
+            if (recs.edge_correction?.apply) {
+                result = applySharpen(result, recs.edge_correction.strength);
+            }
+
+            enhancedCtx.putImageData(result, 0, 0);
+            displayReport(analysis);
+            document.getElementById('comparison-section').classList.remove('hidden');
+        }
+
+        function applyNoiseReduction(imageData, strength) {
+            const data = new Uint8ClampedArray(imageData.data);
+            const result = new Uint8ClampedArray(data);
+            const w = imageData.width, h = imageData.height;
+            const factor = strength / 100 * 0.7;
+
+            for (let y = 1; y < h - 1; y++) {
+                for (let x = 1; x < w - 1; x++) {
+                    const idx = (y * w + x) * 4;
+                    let r = 0, g = 0, b = 0;
+                    for (let dy = -1; dy <= 1; dy++) {
+                        for (let dx = -1; dx <= 1; dx++) {
+                            const nIdx = ((y+dy) * w + (x+dx)) * 4;
+                            r += data[nIdx]; g += data[nIdx+1]; b += data[nIdx+2];
+                        }
+                    }
+                    result[idx] = data[idx] * (1-factor) + (r/9) * factor;
+                    result[idx+1] = data[idx+1] * (1-factor) + (g/9) * factor;
+                    result[idx+2] = data[idx+2] * (1-factor) + (b/9) * factor;
+                }
+            }
+            return new ImageData(result, w, h);
+        }
+
+        function applyBrightness(imageData, adjustment) {
+            const data = new Uint8ClampedArray(imageData.data);
+            const factor = adjustment * 2.55;
+            for (let i = 0; i < data.length; i += 4) {
+                data[i] = Math.min(255, Math.max(0, data[i] + factor));
+                data[i+1] = Math.min(255, Math.max(0, data[i+1] + factor));
+                data[i+2] = Math.min(255, Math.max(0, data[i+2] + factor));
+            }
+            return new ImageData(data, imageData.width, imageData.height);
+        }
+
+        function applyContrast(imageData, strength) {
+            const data = new Uint8ClampedArray(imageData.data);
+            const factor = strength / 100;
+            for (let i = 0; i < data.length; i += 4) {
+                const gray = (data[i] + data[i+1] + data[i+2]) / 3;
+                const target = gray < 85 ? 25 : gray < 170 ? 140 : 230;
+                const ratio = (target / (gray + 0.001) - 1) * factor + 1;
+                data[i] = Math.min(255, Math.max(0, data[i] * ratio));
+                data[i+1] = Math.min(255, Math.max(0, data[i+1] * ratio));
+                data[i+2] = Math.min(255, Math.max(0, data[i+2] * ratio));
+            }
+            return new ImageData(data, imageData.width, imageData.height);
+        }
+
+        function applySharpen(imageData, strength) {
+            const data = new Uint8ClampedArray(imageData.data);
+            const result = new Uint8ClampedArray(data);
+            const w = imageData.width, h = imageData.height;
+            const factor = strength / 100 * 0.3;
+
+            for (let y = 1; y < h - 1; y++) {
+                for (let x = 1; x < w - 1; x++) {
+                    const idx = (y * w + x) * 4;
+                    for (let c = 0; c < 3; c++) {
+                        const center = data[idx + c];
+                        let sum = 0;
+                        for (let dy = -1; dy <= 1; dy++) {
+                            for (let dx = -1; dx <= 1; dx++) {
+                                if (dx === 0 && dy === 0) continue;
+                                sum += data[((y+dy)*w+(x+dx))*4 + c];
+                            }
+                        }
+                        result[idx + c] = Math.min(255, Math.max(0, center + (center - sum/8) * factor));
+                    }
+                }
+            }
+            return new ImageData(result, w, h);
+        }
+
+        function displayReport(analysis) {
+            const report = document.getElementById('report');
+            let html = '<p class="font-bold mb-3">✅ Applied Enhancements:</p><ul class="space-y-2">';
+            const recs = analysis.recommendations;
+            
+            if (recs.noise_reduction?.apply) html += `<li>✓ Noise Reduction (${recs.noise_reduction.strength}%)</li>`;
+            if (recs.brightness_adjustment?.apply) html += `<li>✓ Brightness (${recs.brightness_adjustment.adjustment > 0 ? '+' : ''}${recs.brightness_adjustment.adjustment})</li>`;
+            if (recs.contrast_enhancement?.apply) html += `<li>✓ Contrast (${recs.contrast_enhancement.strength}%)</li>`;
+            if (recs.edge_correction?.apply) html += `<li>✓ Edge Correction (${recs.edge_correction.strength}%)</li>`;
+            
+            html += '</ul>';
+            report.innerHTML = html;
+        }
+
+        document.getElementById('download-btn').addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'qwen_enhanced_image.png';
+            link.href = enhancedCanvas.toDataURL();
+            link.click();
+        });
+
+        // Auto-test on load
+        window.addEventListener('load', () => setTimeout(testConnection, 1000));
+    </script>
+</body>
+</html>

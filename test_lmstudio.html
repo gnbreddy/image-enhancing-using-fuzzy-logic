@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LM Studio Connection Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow">
+        <h1 class="text-2xl font-bold mb-6">🔍 LM Studio Connection Test</h1>
+        
+        <div class="mb-4">
+            <label class="block font-semibold mb-2">LM Studio URL:</label>
+            <input type="text" id="url" value="http://127.0.0.1:1234" class="w-full border p-2 rounded">
+        </div>
+        
+        <button onclick="testConnection()" class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">
+            Test Connection
+        </button>
+        
+        <div id="result" class="mt-6"></div>
+    </div>
+
+    <script>
+        async function testConnection() {
+            const url = document.getElementById('url').value;
+            const result = document.getElementById('result');
+            
+            result.innerHTML = '<p class="text-gray-600">Testing connection...</p>';
+            
+            try {
+                // Test 1: Check if server responds
+                console.log('Testing:', url + '/v1/models');
+                const response = await fetch(`${url}/v1/models`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    result.innerHTML = `
+                        <div class="bg-green-100 border border-green-400 p-4 rounded">
+                            <p class="font-bold text-green-800">✅ Connected Successfully!</p>
+                            <p class="mt-2">Models found: ${data.data?.length || 0}</p>
+                            <pre class="mt-2 text-xs bg-white p-2 rounded overflow-auto">${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                result.innerHTML = `
+                    <div class="bg-red-100 border border-red-400 p-4 rounded">
+                        <p class="font-bold text-red-800">❌ Connection Failed</p>
+                        <p class="mt-2 text-red-700">Error: ${error.message}</p>
+                        <div class="mt-4 text-sm">
+                            <p class="font-semibold">Checklist:</p>
+                            <ul class="list-disc ml-5 mt-2">
+                                <li>Is LM Studio running?</li>
+                                <li>Is the server started? (Local Server tab)</li>
+                                <li>Is a model loaded?</li>
+                                <li>Is the URL correct? (default: http://127.0.0.1:1234)</li>
+                                <li>Is CORS enabled in LM Studio settings?</li>
+                            </ul>
+                        </div>
+                    </div>
+                `;
+                console.error('Connection error:', error);
+            }
+        }
+        
+        // Auto-test on load
+        window.onload = () => testConnection();
+    </script>
+</body>
+</html>
