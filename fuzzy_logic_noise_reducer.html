@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fuzzy Logic Noise Reducer</title>
+    <!-- Simple favicon to prevent 404 errors -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>">
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        canvas {
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            max-width: 100%;
+            height: auto;
+            background-color: #fff;
+        }
+        .slider-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white p-8 rounded-2xl shadow-xl max-w-5xl w-full">
+        <div class="flex items-center justify-between mb-6">
+            <button onclick="window.location.href='index.html'" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
+                ← Back to Home
+            </button>
+            <h1 class="text-3xl font-bold text-gray-800">Fuzzy Logic Noise Reducer</h1>
+            <div class="w-32"></div> <!-- Spacer for centering -->
+        </div>
+        
+        <div class="space-y-4 mb-6">
+            <div class="flex flex-col items-center">
+                <label for="image-upload" class="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-6 rounded-lg cursor-pointer transition-colors duration-300">
+                    Upload Image
+                </label>
+                <input type="file" id="image-upload" accept="image/*" class="hidden">
+                <p id="file-name" class="mt-2 text-gray-600 text-sm"></p>
+            </div>
+            
+            <!-- Noise Reduction Parameters -->
+            <div class="grid md:grid-cols-2 gap-4">
+                <div class="slider-container">
+                    <label for="noise-threshold" class="block text-sm font-medium mb-2">Noise Threshold: <span id="threshold-value">30</span></label>
+                    <input type="range" id="noise-threshold" min="10" max="100" value="30" class="w-full">
+                </div>
+                <div class="slider-container">
+                    <label for="smoothing-factor" class="block text-sm font-medium mb-2">Smoothing Factor: <span id="smoothing-value">0.7</span></label>
+                    <input type="range" id="smoothing-factor" min="0.1" max="1.0" step="0.1" value="0.7" class="w-full">
+                </div>
+            </div>
+            
+            <button id="process-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-300 shadow-lg" disabled>
+                Reduce Noise
+            </button>
+        </div>
+
+        <div id="loading-indicator" class="hidden text-center text-gray-500 mb-4">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+            <p class="mt-2">Processing image...</p>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-8">
+            <div class="flex flex-col items-center">
+                <h2 class="text-xl font-semibold mb-2">Original Image</h2>
+                <canvas id="original-canvas"></canvas>
+            </div>
+            <div class="flex flex-col items-center">
+                <h2 class="text-xl font-semibold mb-2">Noise Reduced Image</h2>
+                <canvas id="processed-canvas"></canvas>
+            </div>
+        </div>
+        
+        <!-- Download Section -->
+        <div id="download-section" class="hidden mt-8 text-center">
+            <button id="download-btn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-300 shadow-lg">
+                📥 Download Noise-Reduced Image
+            </button>
+            <p class="mt-2 text-gray-600 text-sm">Download your noise-reduced image</p>
+        </div>
+
+        <div class="mt-6 bg-blue-50 p-4 rounded-lg">
+            <h3 class="font-semibold text-blue-800 mb-2">How it works:</h3>
+            <p class="text-blue-700 text-sm">
+                This fuzzy logic system analyzes pixel neighborhoods to identify noise. It uses fuzzy sets for 
+                "Low Noise", "Medium Noise", and "High Noise" based on local variance, then applies appropriate 
+                smoothing rules to reduce noise while preserving important image details.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Get references to all the DOM elements
+        const imageUpload = document.getElementById('image-upload');
+        const fileNameDisplay = document.getElementById('file-name');
+        const processBtn = document.getElementById('process-btn');
+        const originalCanvas = document.getElementById('original-canvas');
+        const processedCanvas = document.getElementById('processed-canvas');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const noiseThreshold = document.getElementById('noise-threshold');
+        const smoothingFactor = document.getElementById('smoothing-factor');
+        const thresholdValue = document.getElementById('threshold-value');
+        const smoothingValue = document.getElementById('smoothing-value');
+        
+        const originalCtx = originalCanvas.getContext('2d');
+        const processedCtx = processedCanvas.getContext('2d');
+        
+        let originalImage = null;
+
+        // Update slider values display
+        noiseThreshold.addEventListener('input', (e) => {
+            thresholdValue.textContent = e.target.value;
+        });
+
+        smoothingFactor.addEventListener('input', (e) => {
+            smoothingValue.textContent = e.target.value;
+        });
+
+        // Event listener for the file input
+        imageUpload.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                fileNameDisplay.textContent = file.name;
+                processBtn.disabled = true;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    originalImage = new Image();
+                    originalImage.onload = () => {
+                        // Set canvas sizes to match the image
+                        originalCanvas.width = originalImage.width;
+                        originalCanvas.height = originalImage.height;
+                        processedCanvas.width = originalImage.width;
+                        processedCanvas.height = originalImage.height;
+                        
+                        // Draw the original image on the canvas
+                        originalCtx.drawImage(originalImage, 0, 0);
+                        processedCtx.clearRect(0, 0, processedCanvas.width, processedCanvas.height);
+                        processBtn.disabled = false;
+                    };
+                    originalImage.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Event listener for the process button
+        processBtn.addEventListener('click', () => {
+            if (originalImage) {
+                loadingIndicator.classList.remove('hidden');
+                processBtn.disabled = true;
+                
+                // Use a small delay to allow the loading message to appear
+                setTimeout(() => {
+                    processImage();
+                    loadingIndicator.classList.add('hidden');
+                    processBtn.disabled = false;
+                }, 100);
+            }
+        });
+
+        // Event listener for the download button
+        document.getElementById('download-btn').addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'noise_reduced_image.png';
+            link.href = processedCanvas.toDataURL();
+            link.click();
+        });
+
+        /**
+         * Main function to process the image using fuzzy logic noise reduction.
+         */
+        function processImage() {
+            const imageData = originalCtx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
+            const data = imageData.data;
+            const width = originalCanvas.width;
+            const height = originalCanvas.height;
+            const processedData = new Uint8ClampedArray(data);
+            
+            const threshold = parseInt(noiseThreshold.value);
+            const smoothing = parseFloat(smoothingFactor.value);
+            
+            // Process each pixel (skip border pixels for simplicity)
+            for (let y = 1; y < height - 1; y++) {
+                for (let x = 1; x < width - 1; x++) {
+                    const idx = (y * width + x) * 4;
+                    
+                    // Get the current pixel's grayscale value
+                    const currentGray = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+                    
+                    // Calculate local variance (noise indicator)
+                    const variance = calculateLocalVariance(data, x, y, width, height);
+                    
+                    // Apply fuzzy logic noise reduction
+                    const noiseLevel = fuzzyNoiseDetection(variance, threshold);
+                    const filteredValue = fuzzyNoiseReduction(data, x, y, width, height, noiseLevel, smoothing);
+                    
+                    // Apply the filtered values
+                    processedData[idx] = filteredValue.r;
+                    processedData[idx + 1] = filteredValue.g;
+                    processedData[idx + 2] = filteredValue.b;
+                    // Alpha channel remains unchanged
+                }
+            }
+            
+            // Create new ImageData and draw it
+            const newImageData = new ImageData(processedData, width, height);
+            processedCtx.putImageData(newImageData, 0, 0);
+            
+            // Show download section
+            document.getElementById('download-section').classList.remove('hidden');
+        }
+
+        /**
+         * Calculate local variance in a 3x3 neighborhood around a pixel.
+         */
+        function calculateLocalVariance(data, x, y, width, height) {
+            const pixels = [];
+            
+            // Get 3x3 neighborhood
+            for (let dy = -1; dy <= 1; dy++) {
+                for (let dx = -1; dx <= 1; dx++) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                        const idx = (ny * width + nx) * 4;
+                        const gray = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+                        pixels.push(gray);
+                    }
+                }
+            }
+            
+            // Calculate variance
+            const mean = pixels.reduce((sum, val) => sum + val, 0) / pixels.length;
+            const variance = pixels.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / pixels.length;
+            
+            return variance;
+        }
+
+        /**
+         * Fuzzy logic system to detect noise level based on local variance.
+         */
+        function fuzzyNoiseDetection(variance, threshold) {
+            // Optimized fuzzy sets for screenshot noise (compression artifacts, etc.)
+            const lowNoise = trapezoidalMembership(variance, 0, 0, threshold * 0.3, threshold * 0.7);
+            const mediumNoise = triangularMembership(variance, threshold * 0.4, threshold * 0.8, threshold * 1.2);
+            const highNoise = trapezoidalMembership(variance, threshold * 0.9, threshold * 1.3, threshold * 2.5, threshold * 2.5);
+            
+            return {
+                low: lowNoise,
+                medium: mediumNoise,
+                high: highNoise
+            };
+        }
+
+        /**
+         * Apply fuzzy logic noise reduction based on detected noise level.
+         */
+        function fuzzyNoiseReduction(data, x, y, width, height, noiseLevel, smoothingFactor) {
+            const idx = (y * width + x) * 4;
+            const originalR = data[idx];
+            const originalG = data[idx + 1];
+            const originalB = data[idx + 2];
+            
+            // Calculate average of 3x3 neighborhood for smoothing
+            let avgR = 0, avgG = 0, avgB = 0, count = 0;
+            
+            for (let dy = -1; dy <= 1; dy++) {
+                for (let dx = -1; dx <= 1; dx++) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                        const nIdx = (ny * width + nx) * 4;
+                        avgR += data[nIdx];
+                        avgG += data[nIdx + 1];
+                        avgB += data[nIdx + 2];
+                        count++;
+                    }
+                }
+            }
+            
+            avgR /= count;
+            avgG /= count;
+            avgB /= count;
+            
+            // Fuzzy rules for noise reduction
+            // Rule 1: IF noise is LOW THEN apply minimal smoothing
+            // Rule 2: IF noise is MEDIUM THEN apply moderate smoothing  
+            // Rule 3: IF noise is HIGH THEN apply strong smoothing
+            
+            const lowSmoothingWeight = noiseLevel.low * 0.1;
+            const mediumSmoothingWeight = noiseLevel.medium * 0.5;
+            const highSmoothingWeight = noiseLevel.high * smoothingFactor;
+            
+            const totalWeight = lowSmoothingWeight + mediumSmoothingWeight + highSmoothingWeight;
+            const smoothingAmount = totalWeight > 0 ? totalWeight : 0;
+            
+            // Blend original and smoothed values
+            const newR = originalR * (1 - smoothingAmount) + avgR * smoothingAmount;
+            const newG = originalG * (1 - smoothingAmount) + avgG * smoothingAmount;
+            const newB = originalB * (1 - smoothingAmount) + avgB * smoothingAmount;
+            
+            return {
+                r: Math.min(255, Math.max(0, Math.round(newR))),
+                g: Math.min(255, Math.max(0, Math.round(newG))),
+                b: Math.min(255, Math.max(0, Math.round(newB)))
+            };
+        }
+
+        /**
+         * Triangular membership function.
+         */
+        function triangularMembership(x, a, m, b) {
+            if (x <= a || x >= b) {
+                return 0;
+            } else if (x >= a && x <= m) {
+                return (x - a) / (m - a);
+            } else if (x >= m && x <= b) {
+                return (b - x) / (b - m);
+            }
+            return 0;
+        }
+
+        /**
+         * Trapezoidal membership function.
+         */
+        function trapezoidalMembership(x, a, m1, m2, b) {
+            if (x <= a || x >= b) {
+                return 0;
+            } else if (x >= m1 && x <= m2) {
+                return 1;
+            } else if (x > a && x < m1) {
+                return (x - a) / (m1 - a);
+            } else if (x > m2 && x < b) {
+                return (b - x) / (b - m2);
+            }
+            return 0;
+        }
+    </script>
+</body>
+</html>

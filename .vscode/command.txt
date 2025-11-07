@@ -1,0 +1,28 @@
+cd C:\Users\gopav\OneDrive\Desktop\soft_computing
+npx http-server -p 8000
+
+Check if Server is Running:
+Get-NetTCPConnection -LocalPort 8000
+
+
+Alternative Port (if 8000 doesn't work):
+npx http-server -p 3000
+
+
+Commands
+If Port 8000 is Already in Use:
+Stop-Process -Name "node" -Force
+npx http-server -p 8000
+
+Name of the Faculty	Dr. Prof.S.Sudhakar Ilango	
+Designation	Professor Grade - 1
+Cabin Number	CB-320-C
+Email ID	dean.scope@vitap.ac.in
+Name of the Faculty	Prof.Hari Seetha	
+Designation	Professor Higher Academic Grade
+Cabin Number	CB-222
+Email ID	seetha.hari@vitap.ac.in
+Name of the Faculty	Prof.Vikash Kumar Singh
+Designation	Associate Professor Grade-1
+Cabin Number	AB-1-G-36
+Email ID	

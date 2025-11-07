@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sharpen AI - Advanced Image Sharpening</title>
+    <!-- Simple favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .editor-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        canvas {
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            max-width: 100%;
+            height: auto;
+            background-color: #fff;
+        }
+        .control-panel {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            color: white;
+            margin-bottom: 1rem;
+        }
+        .control-panel h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .slider-group {
+            margin-bottom: 1rem;
+        }
+        .slider-group:last-child {
+            margin-bottom: 0;
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        .slider-value {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.8rem;
+            min-width: 3rem;
+            text-align: center;
+        }
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.3);
+            outline: none;
+            -webkit-appearance: none;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+        .preset-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.875rem;
+            margin: 0.25rem;
+        }
+        .preset-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+        .preset-btn.active {
+            background: rgba(255, 255, 255, 0.4);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        .image-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .image-label {
+            position: absolute;
+            top: -2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        .reset-btn {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        .reset-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .download-btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+        .download-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .ai-indicator {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .processing-animation {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .blur-preview {
+            width: 100%;
+            height: 60px;
+            background: linear-gradient(90deg, #000 0%, #333 50%, #000 100%);
+            border-radius: 0.25rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .blur-preview::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><defs><filter id="blur"><feGaussianBlur stdDeviation="2"/></filter></defs><rect width="100%" height="100%" filter="url(%23blur)"/></svg>');
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body class="p-4">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+            <button onclick="window.location.href='index.html'" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
+                ← Back to Home
+            </button>
+            <h1 class="text-4xl font-bold text-white text-center">Sharpen AI</h1>
+            <div class="w-32"></div>
+        </div>
+
+        <!-- Main Editor Container -->
+        <div class="editor-container rounded-2xl p-6 shadow-2xl">
+            <!-- Upload Section -->
+            <div class="text-center mb-6">
+                <label for="image-upload" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-8 rounded-lg cursor-pointer transition-colors duration-300 inline-block">
+                    📁 Upload Image
+                </label>
+                <input type="file" id="image-upload" accept="image/*" class="hidden">
+                <p id="file-name" class="mt-2 text-gray-600 text-sm"></p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <!-- Left Panel - Controls -->
+                <div class="space-y-4">
+                    <!-- AI Processing Info -->
+                    <div class="ai-indicator">
+                        <span>🤖</span>
+                        <span>AI-Powered Sharpening</span>
+                    </div>
+
+                    <!-- Sharpening Controls -->
+                    <div class="control-panel">
+                        <h3>⚡ Sharpening Settings</h3>
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Sharpening Strength</span>
+                                <span class="slider-value" id="strength-value">50</span>
+                            </div>
+                            <input type="range" id="strength" min="0" max="100" step="1" value="50" class="slider">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Blur Correction</span>
+                                <span class="slider-value" id="blur-value">75</span>
+                            </div>
+                            <input type="range" id="blur" min="0" max="100" step="1" value="75" class="slider">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Edge Enhancement</span>
+                                <span class="slider-value" id="edge-value">60</span>
+                            </div>
+                            <input type="range" id="edge" min="0" max="100" step="1" value="60" class="slider">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>AI Strength</span>
+                                <span class="slider-value" id="ai-strength-value">85</span>
+                            </div>
+                            <input type="range" id="ai-strength" min="0" max="100" step="5" value="85" class="slider">
+                        </div>
+                    </div>
+
+                    <!-- Blur Type Detection -->
+                    <div class="control-panel">
+                        <h3>🔍 Blur Analysis</h3>
+                        <div class="space-y-2">
+                            <button class="preset-btn active" data-type="auto">Auto Detect</button>
+                            <button class="preset-btn" data-type="motion">Motion Blur</button>
+                            <button class="preset-btn" data-type="focus">Out of Focus</button>
+                            <button class="preset-btn" data-type="camera">Camera Shake</button>
+                        </div>
+                        <div class="blur-preview mt-3">
+                            <div class="text-white text-xs p-2">Blur Preview</div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Presets -->
+                    <div class="control-panel">
+                        <h3>⚡ Quick Presets</h3>
+                        <div class="flex flex-wrap">
+                            <button class="preset-btn" data-preset="light">Light Sharpening</button>
+                            <button class="preset-btn" data-preset="moderate">Moderate</button>
+                            <button class="preset-btn" data-preset="heavy">Heavy Sharpening</button>
+                            <button class="preset-btn" data-preset="reset">Reset</button>
+                        </div>
+                    </div>
+
+                    <!-- Image Info -->
+                    <div class="control-panel">
+                        <h3>📊 Image Information</h3>
+                        <div id="image-info" class="text-sm space-y-1">
+                            <p>No image loaded</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Center Panel - Image Display -->
+                <div class="lg:col-span-2">
+                    <div class="before-after">
+                        <div class="image-container">
+                            <div class="image-label">Original (Blurry)</div>
+                            <canvas id="original-canvas" width="400" height="300"></canvas>
+                        </div>
+                        <div class="image-container">
+                            <div class="image-label">AI Sharpened</div>
+                            <canvas id="sharpened-canvas" width="400" height="300"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Processing Status -->
+                    <div id="processing-status" class="hidden text-center mt-4">
+                        <div class="ai-indicator">
+                            <div class="processing-animation"></div>
+                            <span>AI Analyzing & Sharpening...</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex justify-center gap-4 mt-6">
+                        <button id="reset-btn" class="reset-btn">
+                            🔄 Reset
+                        </button>
+                        <button id="download-btn" class="download-btn" disabled>
+                            💾 Download Sharpened Image
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Panel - Tips & Info -->
+                <div class="space-y-4">
+                    <div class="bg-white rounded-lg p-4 shadow-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">💡 Sharpen AI Tips</h3>
+                        <div class="text-sm text-gray-600 space-y-2">
+                            <p><strong>Sharpening Strength:</strong> Overall intensity of sharpening effect</p>
+                            <p><strong>Blur Correction:</strong> Specifically targets and corrects blur</p>
+                            <p><strong>Edge Enhancement:</strong> Boosts contrast along edges</p>
+                            <p><strong>AI Strength:</strong> Controls how aggressively AI processes the image</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-4 shadow-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">🔬 How Sharpen AI Works</h3>
+                        <div class="text-sm text-gray-600 space-y-2">
+                            <p><strong>Blur Detection:</strong> AI identifies blur patterns and their causes</p>
+                            <p><strong>Edge Recovery:</strong> Reconstructs lost edge information</p>
+                            <p><strong>Frequency Analysis:</strong> Enhances high-frequency details</p>
+                            <p><strong>Adaptive Processing:</strong> Adjusts algorithm based on image content</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-4 shadow-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">📈 Best Results</h3>
+                        <div class="text-sm text-gray-600">
+                            <p>Works best on images with:</p>
+                            <ul class="list-disc list-inside mt-2 space-y-1">
+                                <li>Camera shake or motion blur</li>
+                                <li>Out-of-focus subjects</li>
+                                <li>Soft or slightly blurry details</li>
+                                <li>Low-resolution images</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let originalImage = null;
+        let originalImageData = null;
+        let currentBlurType = 'auto';
+        let isProcessing = false;
+
+        // Canvas elements
+        const originalCanvas = document.getElementById('original-canvas');
+        const originalCtx = originalCanvas.getContext('2d');
+        const sharpenedCanvas = document.getElementById('sharpened-canvas');
+        const sharpenedCtx = sharpenedCanvas.getContext('2d');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // File upload
+            document.getElementById('image-upload').addEventListener('change', handleImageUpload);
+            
+            // All sliders
+            const sliders = ['strength', 'blur', 'edge', 'ai-strength'];
+            
+            sliders.forEach(sliderId => {
+                const slider = document.getElementById(sliderId);
+                const valueDisplay = document.getElementById(sliderId + '-value');
+                
+                slider.addEventListener('input', (e) => {
+                    valueDisplay.textContent = e.target.value;
+                    if (!isProcessing && originalImage) {
+                        processImage();
+                    }
+                });
+            });
+            
+            // Blur type selection
+            document.querySelectorAll('.preset-btn[data-type]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    selectBlurType(e.target.dataset.type);
+                });
+            });
+            
+            // Preset buttons
+            document.querySelectorAll('.preset-btn[data-preset]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    applyPreset(e.target.dataset.preset);
+                });
+            });
+            
+            // Action buttons
+            document.getElementById('reset-btn').addEventListener('click', resetAll);
+            document.getElementById('download-btn').addEventListener('click', downloadImage);
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                document.getElementById('file-name').textContent = file.name;
+                document.getElementById('download-btn').disabled = false;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    originalImage = new Image();
+                    originalImage.onload = () => {
+                        // Set canvas sizes
+                        const maxWidth = 400;
+                        const maxHeight = 300;
+                        let { width, height } = originalImage;
+                        
+                        if (width > maxWidth || height > maxHeight) {
+                            const ratio = Math.min(maxWidth / width, maxHeight / height);
+                            width *= ratio;
+                            height *= ratio;
+                        }
+                        
+                        originalCanvas.width = width;
+                        originalCanvas.height = height;
+                        sharpenedCanvas.width = width;
+                        sharpenedCanvas.height = height;
+                        
+                        // Draw original image
+                        originalCtx.drawImage(originalImage, 0, 0, width, height);
+                        
+                        // Get image data
+                        originalImageData = originalCtx.getImageData(0, 0, width, height);
+                        
+                        // Update image info
+                        updateImageInfo(width, height);
+                        
+                        // Process image
+                        processImage();
+                    };
+                    originalImage.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function processImage() {
+            if (!originalImageData || isProcessing) return;
+            
+            isProcessing = true;
+            showProcessingStatus(true);
+            
+            // Get current values
+            const strength = parseInt(document.getElementById('strength').value) / 100;
+            const blur = parseInt(document.getElementById('blur').value) / 100;
+            const edge = parseInt(document.getElementById('edge').value) / 100;
+            const aiStrength = parseInt(document.getElementById('ai-strength').value) / 100;
+            
+            // Simulate AI processing time
+            setTimeout(() => {
+                performAISharpening(strength, blur, edge, aiStrength);
+                showProcessingStatus(false);
+                isProcessing = false;
+            }, 1200);
+        }
+
+        function performAISharpening(strength, blur, edge, aiStrength) {
+            const width = originalImageData.width;
+            const height = originalImageData.height;
+            const data = originalImageData.data;
+            const sharpenedData = new Uint8ClampedArray(data);
+            
+            // AI-powered sharpening algorithm
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const idx = (y * width + x) * 4;
+                    
+                    // Get original pixel
+                    const originalPixel = {
+                        r: data[idx],
+                        g: data[idx + 1],
+                        b: data[idx + 2],
+                        a: data[idx + 3]
+                    };
+                    
+                    // Apply AI sharpening
+                    const sharpenedPixel = applyAISharpening(originalPixel, x, y, width, height, data, strength, blur, edge, aiStrength);
+                    
+                    sharpenedData[idx] = sharpenedPixel.r;
+                    sharpenedData[idx + 1] = sharpenedPixel.g;
+                    sharpenedData[idx + 2] = sharpenedPixel.b;
+                    sharpenedData[idx + 3] = sharpenedPixel.a;
+                }
+            }
+            
+            // Draw result
+            const newImageData = new ImageData(sharpenedData, width, height);
+            sharpenedCtx.putImageData(newImageData, 0, 0);
+        }
+
+        function applyAISharpening(pixel, x, y, width, height, data, strength, blur, edge, aiStrength) {
+            // Get neighborhood for analysis
+            const neighborhood = getNeighborhood(data, x, y, width, height, 3);
+            
+            // Calculate blur characteristics
+            const blurLevel = calculateBlurLevel(neighborhood);
+            const edgeStrength = calculateEdgeStrength(neighborhood);
+            
+            // Apply different sharpening strategies based on blur type
+            let sharpenedPixel = { ...pixel };
+            
+            switch (currentBlurType) {
+                case 'motion':
+                    sharpenedPixel = applyMotionBlurCorrection(pixel, neighborhood, blur, aiStrength);
+                    break;
+                case 'focus':
+                    sharpenedPixel = applyFocusCorrection(pixel, neighborhood, strength, aiStrength);
+                    break;
+                case 'camera':
+                    sharpenedPixel = applyCameraShakeCorrection(pixel, neighborhood, blur, edge, aiStrength);
+                    break;
+                default: // auto
+                    sharpenedPixel = applyAdaptiveSharpening(pixel, neighborhood, blurLevel, edgeStrength, strength, blur, edge, aiStrength);
+            }
+            
+            return sharpenedPixel;
+        }
+
+        function getNeighborhood(data, x, y, width, height, radius) {
+            const neighborhood = [];
+            
+            for (let dy = -radius; dy <= radius; dy++) {
+                for (let dx = -radius; dx <= radius; dx++) {
+                    const nx = Math.max(0, Math.min(width - 1, x + dx));
+                    const ny = Math.max(0, Math.min(height - 1, y + dy));
+                    const idx = (ny * width + nx) * 4;
+                    
+                    neighborhood.push({
+                        r: data[idx],
+                        g: data[idx + 1],
+                        b: data[idx + 2],
+                        a: data[idx + 3]
+                    });
+                }
+            }
+            
+            return neighborhood;
+        }
+
+        function calculateBlurLevel(neighborhood) {
+            // Calculate high-frequency content as blur indicator
+            const center = neighborhood[Math.floor(neighborhood.length / 2)];
+            let highFreq = 0;
+            
+            // Laplacian kernel for high-frequency detection
+            const laplacian = [0, -1, 0, -1, 4, -1, 0, -1, 0];
+            
+            for (let i = 0; i < 9; i++) {
+                const pixel = neighborhood[i];
+                const gray = (pixel.r + pixel.g + pixel.b) / 3;
+                highFreq += gray * laplacian[i];
+            }
+            
+            return Math.abs(highFreq) / 255;
+        }
+
+        function calculateEdgeStrength(neighborhood) {
+            // Sobel edge detection
+            const sobelX = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
+            const sobelY = [-1, -2, -1, 0, 0, 0, 1, 2, 1];
+            
+            let gx = 0, gy = 0;
+            
+            for (let i = 0; i < 9; i++) {
+                const pixel = neighborhood[i];
+                const gray = (pixel.r + pixel.g + pixel.b) / 3;
+                
+                gx += gray * sobelX[i];
+                gy += gray * sobelY[i];
+            }
+            
+            return Math.sqrt(gx * gx + gy * gy) / 255;
+        }
+
+        function applyMotionBlurCorrection(pixel, neighborhood, blur, aiStrength) {
+            // Motion blur correction using deconvolution
+            const kernel = createMotionBlurKernel(3, 0); // horizontal motion
+            const deconvolved = applyDeconvolution(pixel, neighborhood, kernel, blur * aiStrength);
+            
+            return deconvolved;
+        }
+
+        function applyFocusCorrection(pixel, neighborhood, strength, aiStrength) {
+            // Out-of-focus correction using unsharp mask
+            const blurred = getBlurredPixel(neighborhood);
+            const unsharpMask = {
+                r: pixel.r - blurred.r,
+                g: pixel.g - blurred.g,
+                b: pixel.b - blurred.b,
+                a: pixel.a
+            };
+            
+            return {
+                r: Math.min(255, Math.max(0, pixel.r + unsharpMask.r * strength * aiStrength)),
+                g: Math.min(255, Math.max(0, pixel.g + unsharpMask.g * strength * aiStrength)),
+                b: Math.min(255, Math.max(0, pixel.b + unsharpMask.b * strength * aiStrength)),
+                a: pixel.a
+            };
+        }
+
+        function applyCameraShakeCorrection(pixel, neighborhood, blur, edge, aiStrength) {
+            // Camera shake correction using multiple direction kernels
+            const kernels = [
+                createMotionBlurKernel(3, 0),   // horizontal
+                createMotionBlurKernel(3, 45),  // diagonal
+                createMotionBlurKernel(3, 90)   // vertical
+            ];
+            
+            let bestCorrection = pixel;
+            let bestScore = 0;
+            
+            kernels.forEach(kernel => {
+                const corrected = applyDeconvolution(pixel, neighborhood, kernel, blur * aiStrength);
+                const score = calculateSharpness(corrected, neighborhood);
+                
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestCorrection = corrected;
+                }
+            });
+            
+            return bestCorrection;
+        }
+
+        function applyAdaptiveSharpening(pixel, neighborhood, blurLevel, edgeStrength, strength, blur, edge, aiStrength) {
+            // Adaptive sharpening based on local characteristics
+            let sharpenedPixel = { ...pixel };
+            
+            // Apply unsharp mask
+            const unsharpMask = applyUnsharpMask(pixel, neighborhood, strength * aiStrength);
+            
+            // Apply edge enhancement
+            const edgeEnhanced = applyEdgeEnhancement(pixel, neighborhood, edge * aiStrength);
+            
+            // Blend based on local characteristics
+            const blurWeight = blurLevel * blur;
+            const edgeWeight = edgeStrength * edge;
+            
+            return {
+                r: pixel.r * (1 - blurWeight - edgeWeight) + 
+                   unsharpMask.r * blurWeight + 
+                   edgeEnhanced.r * edgeWeight,
+                g: pixel.g * (1 - blurWeight - edgeWeight) + 
+                   unsharpMask.g * blurWeight + 
+                   edgeEnhanced.g * edgeWeight,
+                b: pixel.b * (1 - blurWeight - edgeWeight) + 
+                   unsharpMask.b * blurWeight + 
+                   edgeEnhanced.b * edgeWeight,
+                a: pixel.a
+            };
+        }
+
+        function createMotionBlurKernel(size, angle) {
+            const kernel = [];
+            const center = Math.floor(size / 2);
+            const radians = (angle * Math.PI) / 180;
+            
+            for (let y = 0; y < size; y++) {
+                for (let x = 0; x < size; x++) {
+                    const dx = x - center;
+                    const dy = y - center;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    const dotProduct = dx * Math.cos(radians) + dy * Math.sin(radians);
+                    
+                    if (Math.abs(dotProduct) < 0.5 && distance < size / 2) {
+                        kernel.push(1 / (2 * Math.floor(size / 2) + 1));
+                    } else {
+                        kernel.push(0);
+                    }
+                }
+            }
+            
+            return kernel;
+        }
+
+        function applyDeconvolution(pixel, neighborhood, kernel, strength) {
+            // Simple deconvolution using inverse filtering
+            let r = 0, g = 0, b = 0;
+            
+            neighborhood.forEach((neighbor, index) => {
+                const weight = kernel[index] || 0;
+                r += neighbor.r * weight;
+                g += neighbor.g * weight;
+                b += neighbor.b * weight;
+            });
+            
+            return {
+                r: Math.min(255, Math.max(0, pixel.r + (pixel.r - r) * strength)),
+                g: Math.min(255, Math.max(0, pixel.g + (pixel.g - g) * strength)),
+                b: Math.min(255, Math.max(0, pixel.b + (pixel.b - b) * strength)),
+                a: pixel.a
+            };
+        }
+
+        function getBlurredPixel(neighborhood) {
+            // Simple box blur
+            let r = 0, g = 0, b = 0;
+            
+            neighborhood.forEach(neighbor => {
+                r += neighbor.r;
+                g += neighbor.g;
+                b += neighbor.b;
+            });
+            
+            const count = neighborhood.length;
+            return {
+                r: r / count,
+                g: g / count,
+                b: b / count,
+                a: neighborhood[0].a
+            };
+        }
+
+        function applyUnsharpMask(pixel, neighborhood, strength) {
+            const blurred = getBlurredPixel(neighborhood);
+            const mask = {
+                r: pixel.r - blurred.r,
+                g: pixel.g - blurred.g,
+                b: pixel.b - blurred.b
+            };
+            
+            return {
+                r: Math.min(255, Math.max(0, pixel.r + mask.r * strength)),
+                g: Math.min(255, Math.max(0, pixel.g + mask.g * strength)),
+                b: Math.min(255, Math.max(0, pixel.b + mask.b * strength)),
+                a: pixel.a
+            };
+        }
+
+        function applyEdgeEnhancement(pixel, neighborhood, strength) {
+            // Edge enhancement using high-pass filter
+            const highPass = {
+                r: pixel.r * 5 - 
+                   (neighborhood[1].r + neighborhood[3].r + neighborhood[5].r + neighborhood[7].r),
+                g: pixel.g * 5 - 
+                   (neighborhood[1].g + neighborhood[3].g + neighborhood[5].g + neighborhood[7].g),
+                b: pixel.b * 5 - 
+                   (neighborhood[1].b + neighborhood[3].b + neighborhood[5].b + neighborhood[7].b)
+            };
+            
+            return {
+                r: Math.min(255, Math.max(0, pixel.r + highPass.r * strength / 4)),
+                g: Math.min(255, Math.max(0, pixel.g + highPass.g * strength / 4)),
+                b: Math.min(255, Math.max(0, pixel.b + highPass.b * strength / 4)),
+                a: pixel.a
+            };
+        }
+
+        function calculateSharpness(pixel, neighborhood) {
+            // Calculate sharpness using gradient magnitude
+            const center = neighborhood[4]; // center pixel
+            let gradient = 0;
+            
+            // Calculate gradient in all directions
+            const directions = [
+                { dx: -1, dy: -1 }, { dx: 0, dy: -1 }, { dx: 1, dy: -1 },
+                { dx: -1, dy: 0 },                      { dx: 1, dy: 0 },
+                { dx: -1, dy: 1 },  { dx: 0, dy: 1 },  { dx: 1, dy: 1 }
+            ];
+            
+            directions.forEach(dir => {
+                const neighbor = neighborhood[4 + dir.dy * 3 + dir.dx + 4];
+                if (neighbor) {
+                    const diff = Math.sqrt(
+                        Math.pow(pixel.r - neighbor.r, 2) +
+                        Math.pow(pixel.g - neighbor.g, 2) +
+                        Math.pow(pixel.b - neighbor.b, 2)
+                    );
+                    gradient += diff;
+                }
+            });
+            
+            return gradient / directions.length;
+        }
+
+        function selectBlurType(type) {
+            currentBlurType = type;
+            document.querySelectorAll('.preset-btn[data-type]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            if (originalImage && !isProcessing) {
+                processImage();
+            }
+        }
+
+        function applyPreset(presetName) {
+            // Remove active class from all preset buttons
+            document.querySelectorAll('.preset-btn[data-preset]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Add active class to clicked button
+            event.target.classList.add('active');
+            
+            const presets = {
+                'light': { strength: 30, blur: 40, edge: 30, aiStrength: 60 },
+                'moderate': { strength: 50, blur: 75, edge: 60, aiStrength: 85 },
+                'heavy': { strength: 80, blur: 90, edge: 85, aiStrength: 95 },
+                'reset': { strength: 50, blur: 75, edge: 60, aiStrength: 85 }
+            };
+            
+            const preset = presets[presetName];
+            if (preset) {
+                Object.keys(preset).forEach(key => {
+                    const slider = document.getElementById(key);
+                    const valueDisplay = document.getElementById(key + '-value');
+                    if (slider && valueDisplay) {
+                        slider.value = preset[key];
+                        valueDisplay.textContent = preset[key];
+                    }
+                });
+                
+                if (presetName !== 'reset' && originalImage && !isProcessing) {
+                    processImage();
+                } else if (presetName === 'reset') {
+                    resetAll();
+                }
+            }
+        }
+
+        function resetAll() {
+            // Reset all sliders to default values
+            const defaults = { strength: 50, blur: 75, edge: 60, aiStrength: 85 };
+            
+            Object.keys(defaults).forEach(key => {
+                const slider = document.getElementById(key);
+                const valueDisplay = document.getElementById(key + '-value');
+                if (slider && valueDisplay) {
+                    slider.value = defaults[key];
+                    valueDisplay.textContent = defaults[key];
+                }
+            });
+            
+            // Remove active class from all preset buttons
+            document.querySelectorAll('.preset-btn[data-preset]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Reset to auto blur type
+            currentBlurType = 'auto';
+            document.querySelectorAll('.preset-btn[data-type]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.preset-btn[data-type="auto"]').classList.add('active');
+            
+            // Reset image to original
+            if (originalImageData) {
+                sharpenedCtx.putImageData(originalImageData, 0, 0);
+            }
+        }
+
+        function updateImageInfo(width, height) {
+            const info = document.getElementById('image-info');
+            info.innerHTML = `
+                <p><strong>Dimensions:</strong> ${width} × ${height}</p>
+                <p><strong>Pixels:</strong> ${(width * height).toLocaleString()}</p>
+                <p><strong>Format:</strong> PNG</p>
+                <p><strong>Blur Type:</strong> ${currentBlurType}</p>
+            `;
+        }
+
+        function showProcessingStatus(show) {
+            const status = document.getElementById('processing-status');
+            if (show) {
+                status.classList.remove('hidden');
+            } else {
+                status.classList.add('hidden');
+            }
+        }
+
+        function downloadImage() {
+            if (!sharpenedCanvas) return;
+            
+            const link = document.createElement('a');
+            link.download = 'sharpen_ai_enhanced.png';
+            link.href = sharpenedCanvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>

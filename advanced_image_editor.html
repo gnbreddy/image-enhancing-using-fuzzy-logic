@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Image Editor - Layers, Masks & Filters</title>
+    <!-- Simple favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .editor-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        canvas {
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            max-width: 100%;
+            height: auto;
+            background-color: #fff;
+            cursor: crosshair;
+        }
+        .layer-item {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            margin: 0.25rem 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .layer-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .layer-item.active {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            transform: translateX(10px);
+        }
+        .filter-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            margin: 0.25rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .filter-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .filter-btn.active {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            transform: translateY(-2px);
+        }
+        .mask-preview {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.25rem;
+            background: #f3f4f6;
+            cursor: pointer;
+        }
+        .slider-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            color: white;
+        }
+        .toolbar {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .brush-cursor {
+            cursor: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="none" stroke="black" stroke-width="2"/></svg>') 10 10, crosshair;
+        }
+    </style>
+</head>
+<body class="p-4">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+            <button onclick="window.location.href='index.html'" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
+                ← Back to Home
+            </button>
+            <h1 class="text-4xl font-bold text-white text-center">Advanced Image Editor</h1>
+            <div class="w-32"></div>
+        </div>
+
+        <!-- Main Editor Container -->
+        <div class="editor-container rounded-2xl p-6 shadow-2xl">
+            <!-- Toolbar -->
+            <div class="toolbar mb-6">
+                <div class="flex flex-wrap items-center gap-4 mb-4">
+                    <label for="image-upload" class="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-6 rounded-lg cursor-pointer transition-colors duration-300">
+                        📁 Upload Image
+                    </label>
+                    <input type="file" id="image-upload" accept="image/*" class="hidden">
+                    
+                    <button id="add-layer-btn" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300" disabled>
+                        ➕ Add Layer
+                    </button>
+                    
+                    <button id="download-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300" disabled>
+                        💾 Download
+                    </button>
+                    
+                    <button id="reset-btn" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
+                        🔄 Reset
+                    </button>
+                </div>
+                
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-sm font-medium text-gray-700">Brush Size:</span>
+                    <input type="range" id="brush-size" min="1" max="50" value="10" class="w-24">
+                    <span id="brush-size-value" class="text-sm text-gray-600">10px</span>
+                    
+                    <span class="text-sm font-medium text-gray-700 ml-4">Opacity:</span>
+                    <input type="range" id="opacity" min="0" max="100" value="100" class="w-24">
+                    <span id="opacity-value" class="text-sm text-gray-600">100%</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <!-- Left Panel - Layers & Masks -->
+                <div class="space-y-6">
+                    <!-- Layers Panel -->
+                    <div class="bg-white rounded-lg p-4 shadow-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">Layers</h3>
+                        <div id="layers-container" class="space-y-2">
+                            <!-- Layers will be added dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Masks Panel -->
+                    <div class="bg-white rounded-lg p-4 shadow-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">Masks</h3>
+                        <div class="space-y-3">
+                            <button id="brush-mask-btn" class="filter-btn w-full text-left">
+                                🖌️ Brush Mask
+                            </button>
+                            <button id="gradient-mask-btn" class="filter-btn w-full text-left">
+                                🌈 Gradient Mask
+                            </button>
+                            <button id="shape-mask-btn" class="filter-btn w-full text-left">
+                                ⭕ Shape Mask
+                            </button>
+                            <button id="clear-mask-btn" class="filter-btn w-full text-left bg-red-500 hover:bg-red-600">
+                                🗑️ Clear Mask
+                            </button>
+                        </div>
+                        
+                        <!-- Mask Preview -->
+                        <div class="mt-4">
+                            <h4 class="text-sm font-medium text-gray-600 mb-2">Mask Preview:</h4>
+                            <canvas id="mask-preview" class="mask-preview"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Center Panel - Main Canvas -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-lg p-4 shadow-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3 text-center">Main Canvas</h3>
+                        <div class="flex justify-center">
+                            <canvas id="main-canvas" width="600" height="400"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Panel - Filters -->
+                <div class="space-y-6">
+                    <!-- Color Filters -->
+                    <div class="bg-white rounded-lg p-4 shadow-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">Color Filters</h3>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button class="filter-btn" data-filter="brightness">☀️ Brightness</button>
+                            <button class="filter-btn" data-filter="contrast">🎯 Contrast</button>
+                            <button class="filter-btn" data-filter="saturation">🌈 Saturation</button>
+                            <button class="filter-btn" data-filter="hue">🎨 Hue</button>
+                            <button class="filter-btn" data-filter="sepia">📸 Sepia</button>
+                            <button class="filter-btn" data-filter="grayscale">⚫ Grayscale</button>
+                            <button class="filter-btn" data-filter="invert">🔄 Invert</button>
+                            <button class="filter-btn" data-filter="vintage">📜 Vintage</button>
+                        </div>
+                    </div>
+
+                    <!-- Blur & Sharpen -->
+                    <div class="bg-white rounded-lg p-4 shadow-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">Blur & Sharpen</h3>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button class="filter-btn" data-filter="blur">🌫️ Blur</button>
+                            <button class="filter-btn" data-filter="sharpen">⚡ Sharpen</button>
+                            <button class="filter-btn" data-filter="gaussian-blur">🌀 Gaussian Blur</button>
+                            <button class="filter-btn" data-filter="motion-blur">💨 Motion Blur</button>
+                        </div>
+                    </div>
+
+                    <!-- Artistic Filters -->
+                    <div class="bg-white rounded-lg p-4 shadow-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">Artistic</h3>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button class="filter-btn" data-filter="emboss">🏔️ Emboss</button>
+                            <button class="filter-btn" data-filter="edge-detect">🔍 Edge Detect</button>
+                            <button class="filter-btn" data-filter="oil-painting">🎨 Oil Painting</button>
+                            <button class="filter-btn" data-filter="pixelate">🔲 Pixelate</button>
+                        </div>
+                    </div>
+
+                    <!-- Filter Controls -->
+                    <div id="filter-controls" class="bg-white rounded-lg p-4 shadow-lg hidden">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">Filter Controls</h3>
+                        <div id="filter-sliders" class="space-y-4">
+                            <!-- Dynamic sliders will be added here -->
+                        </div>
+                        <div class="flex gap-2 mt-4">
+                            <button id="apply-filter-btn" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
+                                Apply Filter
+                            </button>
+                            <button id="cancel-filter-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let layers = [];
+        let currentLayerIndex = 0;
+        let currentMask = null;
+        let isDrawing = false;
+        let currentTool = 'brush';
+        let currentFilter = null;
+        let originalImage = null;
+
+        // Canvas elements
+        const mainCanvas = document.getElementById('main-canvas');
+        const mainCtx = mainCanvas.getContext('2d');
+        const maskPreview = document.getElementById('mask-preview');
+        const maskCtx = maskPreview.getContext('2d');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeEditor();
+            setupEventListeners();
+        });
+
+        function initializeEditor() {
+            // Set up mask preview canvas
+            maskPreview.width = 50;
+            maskPreview.height = 50;
+            
+            // Create initial layer
+            addLayer('Background');
+        }
+
+        function setupEventListeners() {
+            // File upload
+            document.getElementById('image-upload').addEventListener('change', handleImageUpload);
+            
+            // Layer controls
+            document.getElementById('add-layer-btn').addEventListener('click', () => addLayer('New Layer'));
+            document.getElementById('download-btn').addEventListener('click', downloadImage);
+            document.getElementById('reset-btn').addEventListener('click', resetEditor);
+            
+            // Mask controls
+            document.getElementById('brush-mask-btn').addEventListener('click', () => setMaskTool('brush'));
+            document.getElementById('gradient-mask-btn').addEventListener('click', () => setMaskTool('gradient'));
+            document.getElementById('shape-mask-btn').addEventListener('click', () => setMaskTool('shape'));
+            document.getElementById('clear-mask-btn').addEventListener('click', clearMask);
+            
+            // Filter controls
+            document.querySelectorAll('.filter-btn[data-filter]').forEach(btn => {
+                btn.addEventListener('click', (e) => selectFilter(e.target.dataset.filter));
+            });
+            
+            document.getElementById('apply-filter-btn').addEventListener('click', applyFilter);
+            document.getElementById('cancel-filter-btn').addEventListener('click', cancelFilter);
+            
+            // Brush controls
+            document.getElementById('brush-size').addEventListener('input', updateBrushSize);
+            document.getElementById('opacity').addEventListener('input', updateOpacity);
+            
+            // Canvas drawing
+            mainCanvas.addEventListener('mousedown', startDrawing);
+            mainCanvas.addEventListener('mousemove', draw);
+            mainCanvas.addEventListener('mouseup', stopDrawing);
+            mainCanvas.addEventListener('mouseout', stopDrawing);
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    originalImage = new Image();
+                    originalImage.onload = () => {
+                        // Set canvas size to match image
+                        mainCanvas.width = originalImage.width;
+                        mainCanvas.height = originalImage.height;
+                        
+                        // Draw image on current layer
+                        if (layers[currentLayerIndex]) {
+                            const layer = layers[currentLayerIndex];
+                            layer.canvas.width = originalImage.width;
+                            layer.canvas.height = originalImage.height;
+                            layer.ctx.drawImage(originalImage, 0, 0);
+                            renderLayers();
+                        }
+                        
+                        document.getElementById('add-layer-btn').disabled = false;
+                    };
+                    originalImage.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function addLayer(name) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            if (originalImage) {
+                canvas.width = originalImage.width;
+                canvas.height = originalImage.height;
+            } else {
+                canvas.width = mainCanvas.width;
+                canvas.height = mainCanvas.height;
+            }
+            
+            const layer = {
+                id: Date.now(),
+                name: name,
+                canvas: canvas,
+                ctx: ctx,
+                visible: true,
+                opacity: 1.0
+            };
+            
+            layers.push(layer);
+            currentLayerIndex = layers.length - 1;
+            updateLayersUI();
+            renderLayers();
+        }
+
+        function updateLayersUI() {
+            const container = document.getElementById('layers-container');
+            container.innerHTML = '';
+            
+            layers.forEach((layer, index) => {
+                const layerDiv = document.createElement('div');
+                layerDiv.className = `layer-item ${index === currentLayerIndex ? 'active' : ''}`;
+                layerDiv.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-medium">${layer.name}</span>
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" ${layer.visible ? 'checked' : ''} onchange="toggleLayerVisibility(${index})">
+                            <button onclick="removeLayer(${index})" class="text-red-300 hover:text-red-100">×</button>
+                        </div>
+                    </div>
+                `;
+                layerDiv.addEventListener('click', () => selectLayer(index));
+                container.appendChild(layerDiv);
+            });
+        }
+
+        function selectLayer(index) {
+            currentLayerIndex = index;
+            updateLayersUI();
+        }
+
+        function toggleLayerVisibility(index) {
+            layers[index].visible = !layers[index].visible;
+            renderLayers();
+        }
+
+        function removeLayer(index) {
+            if (layers.length > 1) {
+                layers.splice(index, 1);
+                if (currentLayerIndex >= layers.length) {
+                    currentLayerIndex = layers.length - 1;
+                }
+                updateLayersUI();
+                renderLayers();
+            }
+        }
+
+        function setMaskTool(tool) {
+            currentTool = tool;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update cursor
+            if (tool === 'brush') {
+                mainCanvas.classList.add('brush-cursor');
+            } else {
+                mainCanvas.classList.remove('brush-cursor');
+            }
+        }
+
+        function clearMask() {
+            currentMask = null;
+            maskCtx.clearRect(0, 0, maskPreview.width, maskPreview.height);
+        }
+
+        function startDrawing(event) {
+            if (currentTool === 'brush') {
+                isDrawing = true;
+                draw(event);
+            }
+        }
+
+        function draw(event) {
+            if (!isDrawing || !layers[currentLayerIndex]) return;
+            
+            const rect = mainCanvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            
+            const layer = layers[currentLayerIndex];
+            const brushSize = parseInt(document.getElementById('brush-size').value);
+            const opacity = parseInt(document.getElementById('opacity').value) / 100;
+            
+            layer.ctx.globalAlpha = opacity;
+            layer.ctx.lineWidth = brushSize;
+            layer.ctx.lineCap = 'round';
+            layer.ctx.strokeStyle = '#000000';
+            
+            if (event.type === 'mousedown') {
+                layer.ctx.beginPath();
+                layer.ctx.moveTo(x, y);
+            } else {
+                layer.ctx.lineTo(x, y);
+                layer.ctx.stroke();
+            }
+            
+            renderLayers();
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        function selectFilter(filterName) {
+            currentFilter = filterName;
+            document.querySelectorAll('.filter-btn[data-filter]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-filter="${filterName}"]`).classList.add('active');
+            
+            showFilterControls(filterName);
+        }
+
+        function showFilterControls(filterName) {
+            const controls = document.getElementById('filter-controls');
+            const sliders = document.getElementById('filter-sliders');
+            
+            controls.classList.remove('hidden');
+            sliders.innerHTML = '';
+            
+            const filterConfigs = {
+                'brightness': [{ name: 'Brightness', min: -100, max: 100, value: 0 }],
+                'contrast': [{ name: 'Contrast', min: -100, max: 100, value: 0 }],
+                'saturation': [{ name: 'Saturation', min: -100, max: 100, value: 0 }],
+                'hue': [{ name: 'Hue', min: -180, max: 180, value: 0 }],
+                'blur': [{ name: 'Blur', min: 0, max: 20, value: 0 }],
+                'sharpen': [{ name: 'Sharpen', min: 0, max: 100, value: 0 }],
+                'gaussian-blur': [{ name: 'Gaussian Blur', min: 0, max: 20, value: 0 }],
+                'emboss': [{ name: 'Emboss', min: 0, max: 100, value: 50 }],
+                'edge-detect': [{ name: 'Edge Detection', min: 0, max: 100, value: 50 }],
+                'oil-painting': [{ name: 'Oil Painting', min: 0, max: 100, value: 50 }],
+                'pixelate': [{ name: 'Pixelate', min: 1, max: 20, value: 1 }]
+            };
+            
+            const config = filterConfigs[filterName] || [];
+            config.forEach(param => {
+                const sliderDiv = document.createElement('div');
+                sliderDiv.className = 'slider-container';
+                sliderDiv.innerHTML = `
+                    <label class="block text-sm font-medium mb-2">${param.name}: <span id="${param.name.toLowerCase().replace(' ', '-')}-value">${param.value}</span></label>
+                    <input type="range" id="${param.name.toLowerCase().replace(' ', '-')}" min="${param.min}" max="${param.max}" value="${param.value}" class="w-full">
+                `;
+                sliders.appendChild(sliderDiv);
+                
+                // Add event listener
+                const slider = sliderDiv.querySelector('input[type="range"]');
+                const valueSpan = sliderDiv.querySelector('span');
+                slider.addEventListener('input', (e) => {
+                    valueSpan.textContent = e.target.value;
+                });
+            });
+        }
+
+        function applyFilter() {
+            if (!currentFilter || !layers[currentLayerIndex]) return;
+            
+            const layer = layers[currentLayerIndex];
+            const imageData = layer.ctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height);
+            
+            // Get filter parameters
+            const params = {};
+            document.querySelectorAll('#filter-sliders input[type="range"]').forEach(slider => {
+                params[slider.id] = parseInt(slider.value);
+            });
+            
+            // Apply filter
+            const filteredData = applyImageFilter(imageData, currentFilter, params);
+            layer.ctx.putImageData(filteredData, 0, 0);
+            
+            renderLayers();
+            hideFilterControls();
+        }
+
+        function cancelFilter() {
+            hideFilterControls();
+        }
+
+        function hideFilterControls() {
+            document.getElementById('filter-controls').classList.add('hidden');
+            document.querySelectorAll('.filter-btn[data-filter]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            currentFilter = null;
+        }
+
+        function applyImageFilter(imageData, filterName, params) {
+            const data = imageData.data;
+            const width = imageData.width;
+            const height = imageData.height;
+            const newData = new Uint8ClampedArray(data);
+            
+            switch (filterName) {
+                case 'brightness':
+                    const brightness = params.brightness || 0;
+                    for (let i = 0; i < data.length; i += 4) {
+                        newData[i] = Math.min(255, Math.max(0, data[i] + brightness));
+                        newData[i + 1] = Math.min(255, Math.max(0, data[i + 1] + brightness));
+                        newData[i + 2] = Math.min(255, Math.max(0, data[i + 2] + brightness));
+                    }
+                    break;
+                    
+                case 'contrast':
+                    const contrast = (params.contrast || 0) / 100;
+                    const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+                    for (let i = 0; i < data.length; i += 4) {
+                        newData[i] = Math.min(255, Math.max(0, factor * (data[i] - 128) + 128));
+                        newData[i + 1] = Math.min(255, Math.max(0, factor * (data[i + 1] - 128) + 128));
+                        newData[i + 2] = Math.min(255, Math.max(0, factor * (data[i + 2] - 128) + 128));
+                    }
+                    break;
+                    
+                case 'saturation':
+                    const saturation = (params.saturation || 0) / 100;
+                    for (let i = 0; i < data.length; i += 4) {
+                        const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+                        newData[i] = Math.min(255, Math.max(0, gray + saturation * (data[i] - gray)));
+                        newData[i + 1] = Math.min(255, Math.max(0, gray + saturation * (data[i + 1] - gray)));
+                        newData[i + 2] = Math.min(255, Math.max(0, gray + saturation * (data[i + 2] - gray)));
+                    }
+                    break;
+                    
+                case 'grayscale':
+                    for (let i = 0; i < data.length; i += 4) {
+                        const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+                        newData[i] = newData[i + 1] = newData[i + 2] = gray;
+                    }
+                    break;
+                    
+                case 'invert':
+                    for (let i = 0; i < data.length; i += 4) {
+                        newData[i] = 255 - data[i];
+                        newData[i + 1] = 255 - data[i + 1];
+                        newData[i + 2] = 255 - data[i + 2];
+                    }
+                    break;
+                    
+                case 'sepia':
+                    for (let i = 0; i < data.length; i += 4) {
+                        const r = data[i];
+                        const g = data[i + 1];
+                        const b = data[i + 2];
+                        newData[i] = Math.min(255, (r * 0.393) + (g * 0.769) + (b * 0.189));
+                        newData[i + 1] = Math.min(255, (r * 0.349) + (g * 0.686) + (b * 0.168));
+                        newData[i + 2] = Math.min(255, (r * 0.272) + (g * 0.534) + (b * 0.131));
+                    }
+                    break;
+                    
+                case 'blur':
+                    return applyBlurFilter(imageData, params.blur || 0);
+                    
+                case 'sharpen':
+                    return applySharpenFilter(imageData, params.sharpen || 0);
+                    
+                case 'emboss':
+                    return applyEmbossFilter(imageData, params.emboss || 50);
+                    
+                case 'edge-detect':
+                    return applyEdgeDetectionFilter(imageData, params['edge-detection'] || 50);
+            }
+            
+            return new ImageData(newData, width, height);
+        }
+
+        function applyBlurFilter(imageData, radius) {
+            const data = imageData.data;
+            const width = imageData.width;
+            const height = imageData.height;
+            const newData = new Uint8ClampedArray(data);
+            
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    let r = 0, g = 0, b = 0, count = 0;
+                    
+                    for (let dy = -radius; dy <= radius; dy++) {
+                        for (let dx = -radius; dx <= radius; dx++) {
+                            const nx = x + dx;
+                            const ny = y + dy;
+                            
+                            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                                const idx = (ny * width + nx) * 4;
+                                r += data[idx];
+                                g += data[idx + 1];
+                                b += data[idx + 2];
+                                count++;
+                            }
+                        }
+                    }
+                    
+                    const idx = (y * width + x) * 4;
+                    newData[idx] = r / count;
+                    newData[idx + 1] = g / count;
+                    newData[idx + 2] = b / count;
+                }
+            }
+            
+            return new ImageData(newData, width, height);
+        }
+
+        function applySharpenFilter(imageData, strength) {
+            const data = imageData.data;
+            const width = imageData.width;
+            const height = imageData.height;
+            const newData = new Uint8ClampedArray(data);
+            
+            const kernel = [
+                0, -1, 0,
+                -1, 5, -1,
+                0, -1, 0
+            ];
+            
+            for (let y = 1; y < height - 1; y++) {
+                for (let x = 1; x < width - 1; x++) {
+                    let r = 0, g = 0, b = 0;
+                    
+                    for (let ky = -1; ky <= 1; ky++) {
+                        for (let kx = -1; kx <= 1; kx++) {
+                            const idx = ((y + ky) * width + (x + kx)) * 4;
+                            const weight = kernel[(ky + 1) * 3 + (kx + 1)];
+                            r += data[idx] * weight;
+                            g += data[idx + 1] * weight;
+                            b += data[idx + 2] * weight;
+                        }
+                    }
+                    
+                    const idx = (y * width + x) * 4;
+                    const factor = strength / 100;
+                    newData[idx] = Math.min(255, Math.max(0, data[idx] + (r - data[idx]) * factor));
+                    newData[idx + 1] = Math.min(255, Math.max(0, data[idx + 1] + (g - data[idx + 1]) * factor));
+                    newData[idx + 2] = Math.min(255, Math.max(0, data[idx + 2] + (b - data[idx + 2]) * factor));
+                }
+            }
+            
+            return new ImageData(newData, width, height);
+        }
+
+        function applyEmbossFilter(imageData, strength) {
+            const data = imageData.data;
+            const width = imageData.width;
+            const height = imageData.height;
+            const newData = new Uint8ClampedArray(data);
+            
+            const kernel = [
+                -2, -1, 0,
+                -1, 1, 1,
+                0, 1, 2
+            ];
+            
+            for (let y = 1; y < height - 1; y++) {
+                for (let x = 1; x < width - 1; x++) {
+                    let r = 0, g = 0, b = 0;
+                    
+                    for (let ky = -1; ky <= 1; ky++) {
+                        for (let kx = -1; kx <= 1; kx++) {
+                            const idx = ((y + ky) * width + (x + kx)) * 4;
+                            const weight = kernel[(ky + 1) * 3 + (kx + 1)];
+                            r += data[idx] * weight;
+                            g += data[idx + 1] * weight;
+                            b += data[idx + 2] * weight;
+                        }
+                    }
+                    
+                    const idx = (y * width + x) * 4;
+                    const factor = strength / 100;
+                    const gray = (r + g + b) / 3;
+                    const value = Math.min(255, Math.max(0, 128 + gray * factor));
+                    newData[idx] = newData[idx + 1] = newData[idx + 2] = value;
+                }
+            }
+            
+            return new ImageData(newData, width, height);
+        }
+
+        function applyEdgeDetectionFilter(imageData, threshold) {
+            const data = imageData.data;
+            const width = imageData.width;
+            const height = imageData.height;
+            const newData = new Uint8ClampedArray(data);
+            
+            const sobelX = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
+            const sobelY = [-1, -2, -1, 0, 0, 0, 1, 2, 1];
+            
+            for (let y = 1; y < height - 1; y++) {
+                for (let x = 1; x < width - 1; x++) {
+                    let gx = 0, gy = 0;
+                    
+                    for (let ky = -1; ky <= 1; ky++) {
+                        for (let kx = -1; kx <= 1; kx++) {
+                            const idx = ((y + ky) * width + (x + kx)) * 4;
+                            const gray = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+                            const weightX = sobelX[(ky + 1) * 3 + (kx + 1)];
+                            const weightY = sobelY[(ky + 1) * 3 + (kx + 1)];
+                            gx += gray * weightX;
+                            gy += gray * weightY;
+                        }
+                    }
+                    
+                    const magnitude = Math.sqrt(gx * gx + gy * gy);
+                    const value = magnitude > threshold ? 255 : 0;
+                    
+                    const idx = (y * width + x) * 4;
+                    newData[idx] = newData[idx + 1] = newData[idx + 2] = value;
+                }
+            }
+            
+            return new ImageData(newData, width, height);
+        }
+
+        function renderLayers() {
+            mainCtx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+            
+            layers.forEach(layer => {
+                if (layer.visible) {
+                    mainCtx.globalAlpha = layer.opacity;
+                    mainCtx.drawImage(layer.canvas, 0, 0);
+                }
+            });
+            
+            mainCtx.globalAlpha = 1.0;
+        }
+
+        function updateBrushSize() {
+            const size = document.getElementById('brush-size').value;
+            document.getElementById('brush-size-value').textContent = size + 'px';
+        }
+
+        function updateOpacity() {
+            const opacity = document.getElementById('opacity').value;
+            document.getElementById('opacity-value').textContent = opacity + '%';
+        }
+
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.download = 'edited_image.png';
+            link.href = mainCanvas.toDataURL();
+            link.click();
+        }
+
+        function resetEditor() {
+            layers = [];
+            currentLayerIndex = 0;
+            currentMask = null;
+            currentFilter = null;
+            originalImage = null;
+            
+            mainCtx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+            maskCtx.clearRect(0, 0, maskPreview.width, maskPreview.height);
+            
+            addLayer('Background');
+            document.getElementById('add-layer-btn').disabled = true;
+            document.getElementById('download-btn').disabled = true;
+            hideFilterControls();
+        }
+    </script>
+</body>
+</html>

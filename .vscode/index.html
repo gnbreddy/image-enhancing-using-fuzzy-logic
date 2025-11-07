@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fuzzy Logic Image Processing Suite</title>
+    <!-- Simple favicon -->
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>"
+    />
+    <!-- Google Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Raleway:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background: linear-gradient(
+          135deg,
+          #667eea,
+          #764ba2,
+          #4facfe,
+          #00f2fe,
+          #f093fb,
+          #f5576c
+        );
+        background-size: 400% 400%;
+        animation: gradientShift 15s ease infinite;
+        min-height: 100vh;
+      }
+
+      @keyframes gradientShift {
+        0% {
+          background-position: 0% 50%;
+        }
+        25% {
+          background-position: 100% 50%;
+        }
+        50% {
+          background-position: 100% 100%;
+        }
+        75% {
+          background-position: 0% 100%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+      .card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.3s ease;
+      }
+      .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      }
+      .service-card {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: black;
+        transition: all 0.3s ease;
+      }
+      .service-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+      }
+      .service-card.contrast {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      }
+      .service-card.noise {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+      .service-card.edge {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      }
+      .hero-text {
+        text-align: center;
+        font-size: 50px;
+        text-transform: uppercase;
+        color: #000000;
+        letter-spacing: 1px;
+        font-family: "Playfair Display", serif;
+        font-weight: 400;
+        text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.3);
+      }
+      .hero-text span {
+        margin-top: 5px;
+        font-size: 15px;
+        color: #000000;
+        word-spacing: 1px;
+        font-weight: normal;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        font-family: "Raleway", sans-serif;
+        font-weight: 500;
+        display: grid;
+        grid-template-columns: 1fr max-content 1fr;
+        grid-template-rows: 27px 0;
+        grid-gap: 20px;
+        align-items: center;
+      }
+      .hero-text span:after,
+      .hero-text span:before {
+        content: " ";
+        display: block;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.6);
+        border-top: 1px solid rgba(0, 0, 0, 0.6);
+        height: 5px;
+        background-color: rgba(0, 0, 0, 0.1);
+      }
+      .feature-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+      }
+    </style>
+  </head>
+  <body class="flex items-center justify-center min-h-screen p-4">
+    <div class="max-w-6xl w-full">
+      <!-- Header Section -->
+      <div class="text-center mb-12">
+        <h1 class="hero-text mb-4">
+          Fuzzy Logic Image Processing Suite
+          <span>Advanced AI-Powered Enhancement Tools</span>
+        </h1>
+        <p class="text-xl text-black opacity-90 max-w-3xl mx-auto">
+          Advanced image enhancement tools powered by intelligent fuzzy logic
+          algorithms. Transform your images with cutting-edge AI-driven
+          processing techniques.
+        </p>
+      </div>
+
+      <!-- Services Grid -->
+      <div class="grid md:grid-cols-3 gap-8 mb-12">
+        <!-- Contrast Enhancer -->
+        <div
+          class="service-card contrast rounded-2xl p-8 text-center cursor-pointer"
+          onclick="navigateTo('fuzzy_logic_contrast_enhancer.html')"
+        >
+          <div class="feature-icon">🖼️</div>
+          <h3 class="text-2xl font-bold mb-4">Contrast Enhancer</h3>
+          <p class="text-black opacity-90 mb-6">
+            Intelligently enhance image contrast using fuzzy logic
+            classification. Automatically adjusts dark, medium, and bright
+            regions for optimal visual quality.
+          </p>
+          <div class="bg-white bg-opacity-20 rounded-lg p-3 mb-4">
+            <p class="text-sm font-semibold">✨ Features:</p>
+            <ul class="text-sm mt-2 space-y-1">
+              <li>• Triangular & Trapezoidal Membership</li>
+              <li>• Real-time Processing</li>
+              <li>• Side-by-side Comparison</li>
+            </ul>
+          </div>
+          <button
+            class="bg-white text-blue-600 font-bold py-2 px-6 rounded-lg hover:bg-opacity-90 transition-colors"
+          >
+            Launch Tool →
+          </button>
+        </div>
+
+        <!-- Noise Reducer -->
+        <div
+          class="service-card noise rounded-2xl p-8 text-center cursor-pointer"
+          onclick="navigateTo('fuzzy_logic_noise_reducer.html')"
+        >
+          <div class="feature-icon">🔧</div>
+          <h3 class="text-2xl font-bold mb-4">Noise Reducer</h3>
+          <p class="text-black opacity-90 mb-6">
+            Remove unwanted noise while preserving important image details. Uses
+            adaptive fuzzy logic to identify and eliminate various types of
+            image noise.
+          </p>
+          <div class="bg-white bg-opacity-20 rounded-lg p-3 mb-4">
+            <p class="text-sm font-semibold">🛠️ Features:</p>
+            <ul class="text-sm mt-2 space-y-1">
+              <li>• Adaptive Noise Detection</li>
+              <li>• Adjustable Parameters</li>
+              <li>• Edge Preservation</li>
+            </ul>
+          </div>
+          <button
+            class="bg-white text-purple-600 font-bold py-2 px-6 rounded-lg hover:bg-opacity-90 transition-colors"
+          >
+            Launch Tool →
+          </button>
+        </div>
+
+        <!-- Edge Corrector -->
+        <div
+          class="service-card edge rounded-2xl p-8 text-center cursor-pointer"
+          onclick="navigateTo('fuzzy_logic_edge_corrector.html')"
+        >
+          <div class="feature-icon">✏️</div>
+          <h3 class="text-2xl font-bold mb-4">Edge Corrector</h3>
+          <p class="text-black opacity-90 mb-6">
+            Detect and repair defective edges in images. Advanced fuzzy logic
+            algorithms identify broken edges and intelligently reconstruct them.
+          </p>
+          <div class="bg-white bg-opacity-20 rounded-lg p-3 mb-4">
+            <p class="text-sm font-semibold">⚡ Features:</p>
+            <ul class="text-sm mt-2 space-y-1">
+              <li>• Sobel Edge Detection</li>
+              <li>• Gap Analysis & Repair</li>
+              <li>• Contextual Interpolation</li>
+            </ul>
+          </div>
+          <button
+            class="bg-white text-pink-600 font-bold py-2 px-6 rounded-lg hover:bg-opacity-90 transition-colors"
+          >
+            Launch Tool →
+          </button>
+        </div>
+      </div>
+
+      <!-- AI-Powered Tools Section -->
+      <div class="mt-12">
+        <div class="text-center mb-8">
+          <h2 class="text-3xl font-bold text-black mb-4">
+            AI-Powered Image Processing
+          </h2>
+          <p class="text-xl text-black opacity-90 max-w-3xl mx-auto">
+            Industry-leading AI tools for upscaling, denoising, and sharpening
+            with advanced neural networks
+          </p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto">
+          <!-- Gigapixel AI -->
+          <div
+            class="service-card contrast rounded-2xl p-8 text-center cursor-pointer"
+            onclick="navigateTo('gigapixel_ai.html')"
+          >
+            <div class="feature-icon">🔍</div>
+            <h3 class="text-2xl font-bold mb-4">Gigapixel AI</h3>
+            <p class="text-black opacity-90 mb-6">
+              Advanced AI upscaling that enhances low-resolution images without
+              losing quality. Perfect for enlarging photos while maintaining
+              crisp details and sharpness.
+            </p>
+            <div class="bg-white bg-opacity-20 rounded-lg p-3 mb-4">
+              <p class="text-sm font-semibold">🤖 AI Features:</p>
+              <ul class="text-sm mt-2 space-y-1">
+                <li>• 2x to 8x upscaling</li>
+                <li>• AI-powered detail enhancement</li>
+                <li>• Multiple AI models</li>
+                <li>• Noise reduction integration</li>
+              </ul>
+            </div>
+            <button
+              class="bg-white text-blue-600 font-bold py-2 px-6 rounded-lg hover:bg-opacity-90 transition-colors"
+            >
+              Launch Gigapixel AI →
+            </button>
+          </div>
+
+          <!-- DeNoise AI -->
+          <div
+            class="service-card noise rounded-2xl p-8 text-center cursor-pointer"
+            onclick="navigateTo('denoise_ai.html')"
+          >
+            <div class="feature-icon">🔇</div>
+            <h3 class="text-2xl font-bold mb-4">DeNoise AI</h3>
+            <p class="text-black opacity-90 mb-6">
+              Industry-leading noise reduction powered by deep learning. Remove
+              digital noise and grain while preserving important image details
+              and textures.
+            </p>
+            <div class="bg-white bg-opacity-20 rounded-lg p-3 mb-4">
+              <p class="text-sm font-semibold">🧠 AI Features:</p>
+              <ul class="text-sm mt-2 space-y-1">
+                <li>• Luminance & color noise reduction</li>
+                <li>• Detail preservation algorithms</li>
+                <li>• Multiple noise type detection</li>
+                <li>• Adaptive AI processing</li>
+              </ul>
+            </div>
+            <button
+              class="bg-white text-purple-600 font-bold py-2 px-6 rounded-lg hover:bg-opacity-90 transition-colors"
+            >
+              Launch DeNoise AI →
+            </button>
+          </div>
+
+          <!-- Sharpen AI -->
+          <div
+            class="service-card edge rounded-2xl p-8 text-center cursor-pointer"
+            onclick="navigateTo('sharpen_ai.html')"
+          >
+            <div class="feature-icon">⚡</div>
+            <h3 class="text-2xl font-bold mb-4">Sharpen AI</h3>
+            <p class="text-black opacity-90 mb-6">
+              Advanced AI sharpening that corrects blurry images from camera
+              shake, motion blur, or focus issues. Recover lost details with
+              intelligent algorithms.
+            </p>
+            <div class="bg-white bg-opacity-20 rounded-lg p-3 mb-4">
+              <p class="text-sm font-semibold">⚡ AI Features:</p>
+              <ul class="text-sm mt-2 space-y-1">
+                <li>• Motion blur correction</li>
+                <li>• Focus recovery algorithms</li>
+                <li>• Edge enhancement</li>
+                <li>• Camera shake correction</li>
+              </ul>
+            </div>
+            <button
+              class="bg-white text-pink-600 font-bold py-2 px-6 rounded-lg hover:bg-opacity-90 transition-colors"
+            >
+              Launch Sharpen AI →
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Advanced Editor Section -->
+      <div class="mt-12">
+        <div class="text-center mb-8">
+          <h2 class="text-3xl font-bold text-black mb-4">
+            Advanced Image Editors
+          </h2>
+          <p class="text-xl text-black opacity-90 max-w-3xl mx-auto">
+            Professional-grade image editing tools with layers, masks, filters,
+            and non-destructive editing
+          </p>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+          <!-- Advanced Image Editor -->
+          <div
+            class="service-card edge rounded-2xl p-8 text-center cursor-pointer"
+            onclick="navigateTo('advanced_image_editor.html')"
+          >
+            <div class="feature-icon">🎨</div>
+            <h3 class="text-2xl font-bold mb-4">Advanced Image Editor</h3>
+            <p class="text-black opacity-90 mb-6">
+              Professional image editing suite with layers, masks, and filters.
+              Create stunning visual effects with precise control over every
+              aspect of your images.
+            </p>
+            <div class="bg-white bg-opacity-20 rounded-lg p-3 mb-4">
+              <p class="text-sm font-semibold">🚀 Features:</p>
+              <ul class="text-sm mt-2 space-y-1">
+                <li>• Multi-layer editing system</li>
+                <li>• Advanced masking tools</li>
+                <li>• 20+ professional filters</li>
+                <li>• Real-time preview & download</li>
+              </ul>
+            </div>
+            <button
+              class="bg-white text-purple-600 font-bold py-2 px-6 rounded-lg hover:bg-opacity-90 transition-colors"
+            >
+              Launch Advanced Editor →
+            </button>
+          </div>
+
+          <!-- Non-Destructive Editor -->
+          <div
+            class="service-card contrast rounded-2xl p-8 text-center cursor-pointer"
+            onclick="navigateTo('non_destructive_editor.html')"
+          >
+            <div class="feature-icon">🎛️</div>
+            <h3 class="text-2xl font-bold mb-4">Non-Destructive Editor</h3>
+            <p class="text-black opacity-90 mb-6">
+              Professional non-destructive editing with exposure,
+              highlights/shadows, color vibrance, and noise reduction while
+              preserving your original image.
+            </p>
+            <div class="bg-white bg-opacity-20 rounded-lg p-3 mb-4">
+              <p class="text-sm font-semibold">✨ Features:</p>
+              <ul class="text-sm mt-2 space-y-1">
+                <li>• Exposure & brightness controls</li>
+                <li>• Highlight & shadow recovery</li>
+                <li>• Color vibrance & temperature</li>
+                <li>• Advanced noise reduction</li>
+              </ul>
+            </div>
+            <button
+              class="bg-white text-blue-600 font-bold py-2 px-6 rounded-lg hover:bg-opacity-90 transition-colors"
+            >
+              Launch Non-Destructive Editor →
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- About Section -->
+      <div class="card rounded-2xl p-8 text-center">
+        <h2 class="text-3xl font-bold text-gray-800 mb-6">
+          About Fuzzy Logic Processing
+        </h2>
+        <div class="grid md:grid-cols-3 gap-8 text-left">
+          <div>
+            <h4 class="font-bold text-lg text-gray-700 mb-3">
+              🧠 Intelligent Processing
+            </h4>
+            <p class="text-gray-600">
+              Fuzzy logic mimics human reasoning to make intelligent decisions
+              about image processing, handling uncertainty and imprecision
+              naturally.
+            </p>
+          </div>
+          <div>
+            <h4 class="font-bold text-lg text-gray-700 mb-3">
+              🎯 Adaptive Algorithms
+            </h4>
+            <p class="text-gray-600">
+              Our algorithms adapt to different image characteristics, providing
+              optimal results for various types of images and processing
+              scenarios.
+            </p>
+          </div>
+          <div>
+            <h4 class="font-bold text-lg text-gray-700 mb-3">
+              ⚡ Real-time Results
+            </h4>
+            <p class="text-gray-600">
+              Experience fast, client-side processing with immediate visual
+              feedback. No server uploads required - your images stay private.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="text-center mt-8">
+        <p class="text-black opacity-75">
+          Built with advanced fuzzy logic algorithms • Client-side processing •
+          Privacy-focused
+        </p>
+      </div>
+    </div>
+
+    <script>
+      function navigateTo(page) {
+        window.location.href = page;
+      }
+
+      // Add some interactive animations
+      document.addEventListener("DOMContentLoaded", function () {
+        const cards = document.querySelectorAll(".service-card");
+
+        cards.forEach((card) => {
+          card.addEventListener("mouseenter", function () {
+            this.style.transform = "translateY(-8px) scale(1.02)";
+          });
+
+          card.addEventListener("mouseleave", function () {
+            this.style.transform = "translateY(0) scale(1)";
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

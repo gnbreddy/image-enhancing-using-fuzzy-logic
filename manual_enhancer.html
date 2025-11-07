@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Image Enhancer - Choose Your Tool</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛠️</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .tool-card {
+            background: white;
+            transition: all 0.3s ease;
+        }
+        .tool-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+        }
+        .tool-card.contrast {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        .tool-card.noise {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .tool-card.edge {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="max-w-6xl w-full">
+        <div class="text-center mb-12">
+            <button onclick="window.location.href='index.html'" class="bg-white hover:bg-gray-100 text-gray-800 font-semibold py-3 px-6 rounded-lg transition-colors duration-300 shadow-lg mb-6">
+                ← Back to Home
+            </button>
+            <h1 class="text-5xl font-bold text-white mb-4">🛠️ Manual Image Enhancer</h1>
+            <p class="text-xl text-white opacity-90">Choose the specific enhancement tool you need</p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8">
+            <!-- Contrast Enhancer -->
+            <div class="tool-card contrast rounded-2xl p-8 text-center cursor-pointer text-white" onclick="window.location.href='.vscode/fuzzy_logic_image_contrast_enhancer.html'">
+                <div class="text-6xl mb-4">🖼️</div>
+                <h3 class="text-2xl font-bold mb-4">Contrast Enhancer</h3>
+                <p class="opacity-90 mb-6">
+                    Intelligently enhance image contrast using fuzzy logic. Adjust dark, medium, and bright regions for optimal visual quality.
+                </p>
+                <div class="bg-white bg-opacity-20 rounded-lg p-3 mb-4">
+                    <p class="text-sm font-semibold">Features:</p>
+                    <ul class="text-sm mt-2 space-y-1">
+                        <li>• Fuzzy Logic Classification</li>
+                        <li>• Real-time Processing</li>
+                        <li>• Side-by-side Comparison</li>
+                    </ul>
+                </div>
+                <button class="bg-white text-blue-600 font-bold py-2 px-6 rounded-lg hover:bg-opacity-90 transition-colors w-full">
+                    Launch Tool →
+                </button>
+            </div>
+
+            <!-- Noise Reducer -->
+            <div class="tool-card noise rounded-2xl p-8 text-center cursor-pointer text-white" onclick="window.location.href='fuzzy_logic_noise_reducer.html'">
+                <div class="text-6xl mb-4">🔧</div>
+                <h3 class="text-2xl font-bold mb-4">Noise Reducer</h3>
+                <p class="opacity-90 mb-6">
+                    Remove unwanted noise while preserving details. Adaptive fuzzy logic identifies and eliminates various types of noise.
+                </p>
+                <div class="bg-white bg-opacity-20 rounded-lg p-3 mb-4">
+                    <p class="text-sm font-semibold">Features:</p>
+                    <ul class="text-sm mt-2 space-y-1">
+                        <li>• Adaptive Noise Detection</li>
+                        <li>• Adjustable Parameters</li>
+                        <li>• Edge Preservation</li>
+                    </ul>
+                </div>
+                <button class="bg-white text-purple-600 font-bold py-2 px-6 rounded-lg hover:bg-opacity-90 transition-colors w-full">
+                    Launch Tool →
+                </button>
+            </div>
+
+            <!-- Edge Corrector -->
+            <div class="tool-card edge rounded-2xl p-8 text-center cursor-pointer text-white" onclick="window.location.href='fuzzy_logic_edge_corrector.html'">
+                <div class="text-6xl mb-4">✏️</div>
+                <h3 class="text-2xl font-bold mb-4">Edge Corrector</h3>
+                <p class="opacity-90 mb-6">
+                    Detect and repair defective edges. Advanced fuzzy logic identifies broken edges and intelligently reconstructs them.
+                </p>
+                <div class="bg-white bg-opacity-20 rounded-lg p-3 mb-4">
+                    <p class="text-sm font-semibold">Features:</p>
+                    <ul class="text-sm mt-2 space-y-1">
+                        <li>• Sobel Edge Detection</li>
+                        <li>• Gap Analysis & Repair</li>
+                        <li>• Contextual Interpolation</li>
+                    </ul>
+                </div>
+                <button class="bg-white text-pink-600 font-bold py-2 px-6 rounded-lg hover:bg-opacity-90 transition-colors w-full">
+                    Launch Tool →
+                </button>
+            </div>
+        </div>
+
+        <div class="mt-12 text-center">
+            <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-xl p-6 text-white">
+                <h3 class="font-bold text-xl mb-3">💡 When to Use Manual Tools</h3>
+                <p class="opacity-90">
+                    Use manual tools when you need precise control over specific aspects of your image. 
+                    Each tool offers adjustable parameters for fine-tuning results to your exact needs.
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

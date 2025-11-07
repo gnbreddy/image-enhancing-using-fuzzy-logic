@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Non-Destructive Image Editor - Professional Tools</title>
+    <!-- Simple favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎛️</text></svg>">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .editor-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        canvas {
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            max-width: 100%;
+            height: auto;
+            background-color: #fff;
+        }
+        .control-panel {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            color: white;
+            margin-bottom: 1rem;
+        }
+        .control-panel h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .slider-group {
+            margin-bottom: 1rem;
+        }
+        .slider-group:last-child {
+            margin-bottom: 0;
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        .slider-value {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.8rem;
+            min-width: 3rem;
+            text-align: center;
+        }
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.3);
+            outline: none;
+            -webkit-appearance: none;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+        .preset-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.875rem;
+            margin: 0.25rem;
+        }
+        .preset-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+        .preset-btn.active {
+            background: rgba(255, 255, 255, 0.4);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+        .histogram {
+            width: 100%;
+            height: 60px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 0.25rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .histogram-bar {
+            position: absolute;
+            bottom: 0;
+            background: linear-gradient(to top, #4facfe, #00f2fe);
+            opacity: 0.7;
+            transition: all 0.3s ease;
+        }
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        .image-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .image-label {
+            position: absolute;
+            top: -2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        .reset-btn {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        .reset-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .download-btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+        .download-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+    </style>
+</head>
+<body class="p-4">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+            <button onclick="window.location.href='index.html'" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
+                ← Back to Home
+            </button>
+            <h1 class="text-4xl font-bold text-white text-center">Non-Destructive Image Editor</h1>
+            <div class="w-32"></div>
+        </div>
+
+        <!-- Main Editor Container -->
+        <div class="editor-container rounded-2xl p-6 shadow-2xl">
+            <!-- Upload Section -->
+            <div class="text-center mb-6">
+                <label for="image-upload" class="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-8 rounded-lg cursor-pointer transition-colors duration-300 inline-block">
+                    📁 Upload Image
+                </label>
+                <input type="file" id="image-upload" accept="image/*" class="hidden">
+                <p id="file-name" class="mt-2 text-gray-600 text-sm"></p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <!-- Left Panel - Controls -->
+                <div class="space-y-4">
+                    <!-- Exposure Controls -->
+                    <div class="control-panel">
+                        <h3>☀️ Exposure & Brightness</h3>
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Exposure</span>
+                                <span class="slider-value" id="exposure-value">0</span>
+                            </div>
+                            <input type="range" id="exposure" min="-3" max="3" step="0.1" value="0" class="slider">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Brightness</span>
+                                <span class="slider-value" id="brightness-value">0</span>
+                            </div>
+                            <input type="range" id="brightness" min="-100" max="100" step="1" value="0" class="slider">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Gamma</span>
+                                <span class="slider-value" id="gamma-value">1.0</span>
+                            </div>
+                            <input type="range" id="gamma" min="0.1" max="3.0" step="0.1" value="1.0" class="slider">
+                        </div>
+                    </div>
+
+                    <!-- Highlights & Shadows -->
+                    <div class="control-panel">
+                        <h3>🌓 Highlights & Shadows</h3>
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Highlights</span>
+                                <span class="slider-value" id="highlights-value">0</span>
+                            </div>
+                            <input type="range" id="highlights" min="-100" max="100" step="1" value="0" class="slider">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Shadows</span>
+                                <span class="slider-value" id="shadows-value">0</span>
+                            </div>
+                            <input type="range" id="shadows" min="-100" max="100" step="1" value="0" class="slider">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Whites</span>
+                                <span class="slider-value" id="whites-value">0</span>
+                            </div>
+                            <input type="range" id="whites" min="-100" max="100" step="1" value="0" class="slider">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Blacks</span>
+                                <span class="slider-value" id="blacks-value">0</span>
+                            </div>
+                            <input type="range" id="blacks" min="-100" max="100" step="1" value="0" class="slider">
+                        </div>
+                    </div>
+
+                    <!-- Color & Vibrance -->
+                    <div class="control-panel">
+                        <h3>🎨 Color & Vibrance</h3>
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Vibrance</span>
+                                <span class="slider-value" id="vibrance-value">0</span>
+                            </div>
+                            <input type="range" id="vibrance" min="-100" max="100" step="1" value="0" class="slider">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Saturation</span>
+                                <span class="slider-value" id="saturation-value">0</span>
+                            </div>
+                            <input type="range" id="saturation" min="-100" max="100" step="1" value="0" class="slider">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Temperature</span>
+                                <span class="slider-value" id="temperature-value">0</span>
+                            </div>
+                            <input type="range" id="temperature" min="-100" max="100" step="1" value="0" class="slider">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Tint</span>
+                                <span class="slider-value" id="tint-value">0</span>
+                            </div>
+                            <input type="range" id="tint" min="-100" max="100" step="1" value="0" class="slider">
+                        </div>
+                    </div>
+
+                    <!-- Noise Reduction -->
+                    <div class="control-panel">
+                        <h3>🔧 Noise Reduction</h3>
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Luminance</span>
+                                <span class="slider-value" id="luminance-value">0</span>
+                            </div>
+                            <input type="range" id="luminance" min="0" max="100" step="1" value="0" class="slider">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Color Noise</span>
+                                <span class="slider-value" id="color-noise-value">0</span>
+                            </div>
+                            <input type="range" id="color-noise" min="0" max="100" step="1" value="0" class="slider">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Detail</span>
+                                <span class="slider-value" id="detail-value">50</span>
+                            </div>
+                            <input type="range" id="detail" min="0" max="100" step="1" value="50" class="slider">
+                        </div>
+                    </div>
+
+                    <!-- Presets -->
+                    <div class="control-panel">
+                        <h3>🎭 Quick Presets</h3>
+                        <div class="flex flex-wrap">
+                            <button class="preset-btn" data-preset="vivid">Vivid</button>
+                            <button class="preset-btn" data-preset="dramatic">Dramatic</button>
+                            <button class="preset-btn" data-preset="soft">Soft</button>
+                            <button class="preset-btn" data-preset="monochrome">Monochrome</button>
+                            <button class="preset-btn" data-preset="vintage">Vintage</button>
+                            <button class="preset-btn" data-preset="reset">Reset</button>
+                        </div>
+                    </div>
+
+                    <!-- Histogram -->
+                    <div class="control-panel">
+                        <h3>📊 Histogram</h3>
+                        <div class="histogram" id="histogram">
+                            <!-- Histogram bars will be generated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Center Panel - Image Display -->
+                <div class="lg:col-span-2">
+                    <div class="before-after">
+                        <div class="image-container">
+                            <div class="image-label">Original</div>
+                            <canvas id="original-canvas" width="600" height="400"></canvas>
+                        </div>
+                        <div class="image-container">
+                            <div class="image-label">Edited</div>
+                            <canvas id="edited-canvas" width="600" height="400"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex justify-center gap-4 mt-6">
+                        <button id="reset-btn" class="reset-btn">
+                            🔄 Reset All
+                        </button>
+                        <button id="download-btn" class="download-btn" disabled>
+                            💾 Download Edited Image
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Panel - Info & Tips -->
+                <div class="space-y-4">
+                    <div class="bg-white rounded-lg p-4 shadow-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">💡 Editing Tips</h3>
+                        <div class="text-sm text-gray-600 space-y-2">
+                            <p><strong>Exposure:</strong> Adjust overall brightness without affecting highlights/shadows</p>
+                            <p><strong>Highlights:</strong> Recover detail in bright areas</p>
+                            <p><strong>Shadows:</strong> Lift dark areas while preserving contrast</p>
+                            <p><strong>Vibrance:</strong> Boost muted colors while protecting skin tones</p>
+                            <p><strong>Noise Reduction:</strong> Smooth grain while preserving detail</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-4 shadow-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">🔍 Image Info</h3>
+                        <div id="image-info" class="text-sm text-gray-600">
+                            <p>No image loaded</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-4 shadow-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">⚡ Non-Destructive</h3>
+                        <div class="text-sm text-gray-600">
+                            <p>All adjustments are applied in real-time without modifying your original image. You can always reset to the original or adjust any parameter at any time.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let originalImage = null;
+        let originalImageData = null;
+        let currentImageData = null;
+        let isProcessing = false;
+
+        // Canvas elements
+        const originalCanvas = document.getElementById('original-canvas');
+        const originalCtx = originalCanvas.getContext('2d');
+        const editedCanvas = document.getElementById('edited-canvas');
+        const editedCtx = editedCanvas.getContext('2d');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // File upload
+            document.getElementById('image-upload').addEventListener('change', handleImageUpload);
+            
+            // All sliders
+            const sliders = [
+                'exposure', 'brightness', 'gamma', 'highlights', 'shadows', 
+                'whites', 'blacks', 'vibrance', 'saturation', 'temperature', 
+                'tint', 'luminance', 'color-noise', 'detail'
+            ];
+            
+            sliders.forEach(sliderId => {
+                const slider = document.getElementById(sliderId);
+                const valueDisplay = document.getElementById(sliderId + '-value');
+                
+                slider.addEventListener('input', (e) => {
+                    valueDisplay.textContent = e.target.value;
+                    if (!isProcessing) {
+                        processImage();
+                    }
+                });
+            });
+            
+            // Preset buttons
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    applyPreset(e.target.dataset.preset);
+                });
+            });
+            
+            // Action buttons
+            document.getElementById('reset-btn').addEventListener('click', resetAll);
+            document.getElementById('download-btn').addEventListener('click', downloadImage);
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                document.getElementById('file-name').textContent = file.name;
+                document.getElementById('download-btn').disabled = false;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    originalImage = new Image();
+                    originalImage.onload = () => {
+                        // Set canvas sizes
+                        const maxWidth = 600;
+                        const maxHeight = 400;
+                        let { width, height } = originalImage;
+                        
+                        if (width > maxWidth || height > maxHeight) {
+                            const ratio = Math.min(maxWidth / width, maxHeight / height);
+                            width *= ratio;
+                            height *= ratio;
+                        }
+                        
+                        originalCanvas.width = width;
+                        originalCanvas.height = height;
+                        editedCanvas.width = width;
+                        editedCanvas.height = height;
+                        
+                        // Draw original image
+                        originalCtx.drawImage(originalImage, 0, 0, width, height);
+                        
+                        // Get image data
+                        originalImageData = originalCtx.getImageData(0, 0, width, height);
+                        currentImageData = new ImageData(
+                            new Uint8ClampedArray(originalImageData.data),
+                            width,
+                            height
+                        );
+                        
+                        // Update image info
+                        updateImageInfo(width, height);
+                        
+                        // Generate histogram
+                        generateHistogram();
+                        
+                        // Process image
+                        processImage();
+                    };
+                    originalImage.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function processImage() {
+            if (!originalImageData || isProcessing) return;
+            
+            isProcessing = true;
+            
+            // Get current values
+            const values = {
+                exposure: parseFloat(document.getElementById('exposure').value),
+                brightness: parseInt(document.getElementById('brightness').value),
+                gamma: parseFloat(document.getElementById('gamma').value),
+                highlights: parseInt(document.getElementById('highlights').value),
+                shadows: parseInt(document.getElementById('shadows').value),
+                whites: parseInt(document.getElementById('whites').value),
+                blacks: parseInt(document.getElementById('blacks').value),
+                vibrance: parseInt(document.getElementById('vibrance').value),
+                saturation: parseInt(document.getElementById('saturation').value),
+                temperature: parseInt(document.getElementById('temperature').value),
+                tint: parseInt(document.getElementById('tint').value),
+                luminance: parseInt(document.getElementById('luminance').value),
+                colorNoise: parseInt(document.getElementById('color-noise').value),
+                detail: parseInt(document.getElementById('detail').value)
+            };
+            
+            // Create working copy
+            const data = new Uint8ClampedArray(originalImageData.data);
+            const width = originalImageData.width;
+            const height = originalImageData.height;
+            
+            // Apply all adjustments
+            applyExposureAdjustments(data, width, height, values);
+            applyHighlightShadowAdjustments(data, width, height, values);
+            applyColorAdjustments(data, width, height, values);
+            applyNoiseReduction(data, width, height, values);
+            
+            // Draw result
+            const newImageData = new ImageData(data, width, height);
+            editedCtx.putImageData(newImageData, 0, 0);
+            
+            isProcessing = false;
+        }
+
+        function applyExposureAdjustments(data, width, height, values) {
+            const { exposure, brightness, gamma } = values;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                let r = data[i];
+                let g = data[i + 1];
+                let b = data[i + 2];
+                
+                // Apply exposure (exponential)
+                const exposureFactor = Math.pow(2, exposure);
+                r *= exposureFactor;
+                g *= exposureFactor;
+                b *= exposureFactor;
+                
+                // Apply brightness (additive)
+                r += brightness;
+                g += brightness;
+                b += brightness;
+                
+                // Apply gamma correction
+                r = Math.pow(r / 255, 1 / gamma) * 255;
+                g = Math.pow(g / 255, 1 / gamma) * 255;
+                b = Math.pow(b / 255, 1 / gamma) * 255;
+                
+                // Clamp values
+                data[i] = Math.min(255, Math.max(0, r));
+                data[i + 1] = Math.min(255, Math.max(0, g));
+                data[i + 2] = Math.min(255, Math.max(0, b));
+            }
+        }
+
+        function applyHighlightShadowAdjustments(data, width, height, values) {
+            const { highlights, shadows, whites, blacks } = values;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                let r = data[i];
+                let g = data[i + 1];
+                let b = data[i + 2];
+                
+                // Calculate luminance
+                const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+                
+                // Apply highlight recovery
+                if (luminance > 180) {
+                    const factor = 1 - (highlights / 100) * ((luminance - 180) / 75);
+                    r *= factor;
+                    g *= factor;
+                    b *= factor;
+                }
+                
+                // Apply shadow lifting
+                if (luminance < 75) {
+                    const factor = 1 + (shadows / 100) * ((75 - luminance) / 75);
+                    r *= factor;
+                    g *= factor;
+                    b *= factor;
+                }
+                
+                // Apply whites adjustment
+                if (luminance > 200) {
+                    const factor = 1 + (whites / 100) * ((luminance - 200) / 55);
+                    r *= factor;
+                    g *= factor;
+                    b *= factor;
+                }
+                
+                // Apply blacks adjustment
+                if (luminance < 55) {
+                    const factor = 1 + (blacks / 100) * ((55 - luminance) / 55);
+                    r *= factor;
+                    g *= factor;
+                    b *= factor;
+                }
+                
+                // Clamp values
+                data[i] = Math.min(255, Math.max(0, r));
+                data[i + 1] = Math.min(255, Math.max(0, g));
+                data[i + 2] = Math.min(255, Math.max(0, b));
+            }
+        }
+
+        function applyColorAdjustments(data, width, height, values) {
+            const { vibrance, saturation, temperature, tint } = values;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                let r = data[i];
+                let g = data[i + 1];
+                let b = data[i + 2];
+                
+                // Apply temperature adjustment
+                if (temperature > 0) {
+                    r += temperature * 0.5;
+                    b -= temperature * 0.3;
+                } else {
+                    r += temperature * 0.5;
+                    b -= temperature * 0.3;
+                }
+                
+                // Apply tint adjustment
+                if (tint > 0) {
+                    r += tint * 0.3;
+                    g -= tint * 0.2;
+                } else {
+                    r += tint * 0.3;
+                    g -= tint * 0.2;
+                }
+                
+                // Apply vibrance (selective saturation)
+                const maxChannel = Math.max(r, g, b);
+                const minChannel = Math.min(r, g, b);
+                const saturationLevel = maxChannel - minChannel;
+                
+                if (saturationLevel > 0) {
+                    const vibranceFactor = 1 + (vibrance / 100) * (1 - saturationLevel / 255);
+                    r = r + (r - (r + g + b) / 3) * (vibranceFactor - 1);
+                    g = g + (g - (r + g + b) / 3) * (vibranceFactor - 1);
+                    b = b + (b - (r + g + b) / 3) * (vibranceFactor - 1);
+                }
+                
+                // Apply saturation
+                const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+                const saturationFactor = 1 + (saturation / 100);
+                r = gray + (r - gray) * saturationFactor;
+                g = gray + (g - gray) * saturationFactor;
+                b = gray + (b - gray) * saturationFactor;
+                
+                // Clamp values
+                data[i] = Math.min(255, Math.max(0, r));
+                data[i + 1] = Math.min(255, Math.max(0, g));
+                data[i + 2] = Math.min(255, Math.max(0, b));
+            }
+        }
+
+        function applyNoiseReduction(data, width, height, values) {
+            const { luminance, colorNoise, detail } = values;
+            
+            if (luminance === 0 && colorNoise === 0) return;
+            
+            // Create a copy for reference
+            const originalData = new Uint8ClampedArray(data);
+            
+            for (let y = 1; y < height - 1; y++) {
+                for (let x = 1; x < width - 1; x++) {
+                    const idx = (y * width + x) * 4;
+                    
+                    // Luminance noise reduction
+                    if (luminance > 0) {
+                        const smoothed = getSmoothedPixel(originalData, x, y, width, height, luminance / 100);
+                        data[idx] = smoothed.r;
+                        data[idx + 1] = smoothed.g;
+                        data[idx + 2] = smoothed.b;
+                    }
+                    
+                    // Color noise reduction
+                    if (colorNoise > 0) {
+                        const colorSmoothed = getColorSmoothedPixel(originalData, x, y, width, height, colorNoise / 100);
+                        data[idx] = colorSmoothed.r;
+                        data[idx + 1] = colorSmoothed.g;
+                        data[idx + 2] = colorSmoothed.b;
+                    }
+                }
+            }
+        }
+
+        function getSmoothedPixel(data, x, y, width, height, strength) {
+            let r = 0, g = 0, b = 0, count = 0;
+            
+            for (let dy = -1; dy <= 1; dy++) {
+                for (let dx = -1; dx <= 1; dx++) {
+                    const idx = ((y + dy) * width + (x + dx)) * 4;
+                    r += data[idx];
+                    g += data[idx + 1];
+                    b += data[idx + 2];
+                    count++;
+                }
+            }
+            
+            const originalIdx = (y * width + x) * 4;
+            const originalR = data[originalIdx];
+            const originalG = data[originalIdx + 1];
+            const originalB = data[originalIdx + 2];
+            
+            return {
+                r: originalR * (1 - strength) + (r / count) * strength,
+                g: originalG * (1 - strength) + (g / count) * strength,
+                b: originalB * (1 - strength) + (b / count) * strength
+            };
+        }
+
+        function getColorSmoothedPixel(data, x, y, width, height, strength) {
+            const idx = (y * width + x) * 4;
+            const r = data[idx];
+            const g = data[idx + 1];
+            const b = data[idx + 2];
+            
+            // Convert to HSV for color noise reduction
+            const hsv = rgbToHsv(r, g, b);
+            
+            // Smooth saturation
+            hsv.s *= (1 - strength);
+            
+            // Convert back to RGB
+            const rgb = hsvToRgb(hsv.h, hsv.s, hsv.v);
+            
+            return {
+                r: r * (1 - strength) + rgb.r * strength,
+                g: g * (1 - strength) + rgb.g * strength,
+                b: b * (1 - strength) + rgb.b * strength
+            };
+        }
+
+        function rgbToHsv(r, g, b) {
+            r /= 255; g /= 255; b /= 255;
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            const diff = max - min;
+            
+            let h = 0;
+            if (diff !== 0) {
+                if (max === r) h = ((g - b) / diff) % 6;
+                else if (max === g) h = (b - r) / diff + 2;
+                else h = (r - g) / diff + 4;
+            }
+            h = (h * 60 + 360) % 360;
+            
+            return {
+                h: h,
+                s: max === 0 ? 0 : diff / max,
+                v: max
+            };
+        }
+
+        function hsvToRgb(h, s, v) {
+            h /= 60;
+            const c = v * s;
+            const x = c * (1 - Math.abs((h % 2) - 1));
+            const m = v - c;
+            
+            let r, g, b;
+            if (h < 1) { r = c; g = x; b = 0; }
+            else if (h < 2) { r = x; g = c; b = 0; }
+            else if (h < 3) { r = 0; g = c; b = x; }
+            else if (h < 4) { r = 0; g = x; b = c; }
+            else if (h < 5) { r = x; g = 0; b = c; }
+            else { r = c; g = 0; b = x; }
+            
+            return {
+                r: Math.round((r + m) * 255),
+                g: Math.round((g + m) * 255),
+                b: Math.round((b + m) * 255)
+            };
+        }
+
+        function applyPreset(presetName) {
+            // Remove active class from all preset buttons
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Add active class to clicked button
+            event.target.classList.add('active');
+            
+            const presets = {
+                vivid: { vibrance: 30, saturation: 20, exposure: 0.2, highlights: -20, shadows: 20 },
+                dramatic: { exposure: 0.5, contrast: 30, highlights: -30, shadows: 30, vibrance: 25 },
+                soft: { exposure: -0.2, highlights: 20, shadows: -10, vibrance: -10, saturation: -15 },
+                monochrome: { saturation: -100, vibrance: -100, exposure: 0.1, contrast: 20 },
+                vintage: { temperature: 20, tint: 10, vibrance: -20, saturation: -30, exposure: -0.3 },
+                reset: { exposure: 0, brightness: 0, gamma: 1.0, highlights: 0, shadows: 0, whites: 0, blacks: 0, vibrance: 0, saturation: 0, temperature: 0, tint: 0, luminance: 0, colorNoise: 0, detail: 50 }
+            };
+            
+            const preset = presets[presetName];
+            if (preset) {
+                Object.keys(preset).forEach(key => {
+                    const slider = document.getElementById(key);
+                    const valueDisplay = document.getElementById(key + '-value');
+                    if (slider && valueDisplay) {
+                        slider.value = preset[key];
+                        valueDisplay.textContent = preset[key];
+                    }
+                });
+                
+                if (presetName !== 'reset') {
+                    processImage();
+                } else {
+                    resetAll();
+                }
+            }
+        }
+
+        function resetAll() {
+            // Reset all sliders to default values
+            const defaults = {
+                exposure: 0, brightness: 0, gamma: 1.0, highlights: 0, shadows: 0,
+                whites: 0, blacks: 0, vibrance: 0, saturation: 0, temperature: 0,
+                tint: 0, luminance: 0, colorNoise: 0, detail: 50
+            };
+            
+            Object.keys(defaults).forEach(key => {
+                const slider = document.getElementById(key);
+                const valueDisplay = document.getElementById(key + '-value');
+                if (slider && valueDisplay) {
+                    slider.value = defaults[key];
+                    valueDisplay.textContent = defaults[key];
+                }
+            });
+            
+            // Remove active class from all preset buttons
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Reset image to original
+            if (originalImageData) {
+                editedCtx.putImageData(originalImageData, 0, 0);
+            }
+        }
+
+        function updateImageInfo(width, height) {
+            const info = document.getElementById('image-info');
+            info.innerHTML = `
+                <p><strong>Dimensions:</strong> ${width} × ${height}</p>
+                <p><strong>Pixels:</strong> ${(width * height).toLocaleString()}</p>
+                <p><strong>Format:</strong> PNG</p>
+                <p><strong>Color Space:</strong> sRGB</p>
+            `;
+        }
+
+        function generateHistogram() {
+            if (!originalImageData) return;
+            
+            const histogram = document.getElementById('histogram');
+            histogram.innerHTML = '';
+            
+            // Calculate histogram
+            const hist = new Array(256).fill(0);
+            const data = originalImageData.data;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                const gray = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+                hist[gray]++;
+            }
+            
+            // Find maximum count for normalization
+            const maxCount = Math.max(...hist);
+            
+            // Create histogram bars
+            for (let i = 0; i < 256; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'histogram-bar';
+                const height = (hist[i] / maxCount) * 100;
+                bar.style.left = `${(i / 256) * 100}%`;
+                bar.style.width = `${100 / 256}%`;
+                bar.style.height = `${height}%`;
+                histogram.appendChild(bar);
+            }
+        }
+
+        function downloadImage() {
+            if (!editedCanvas) return;
+            
+            const link = document.createElement('a');
+            link.download = 'non_destructive_edited_image.png';
+            link.href = editedCanvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>

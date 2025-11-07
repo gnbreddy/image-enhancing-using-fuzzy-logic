@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fuzzy Logic Image Processing Suite</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .main-card {
+            background: white;
+            transition: all 0.4s ease;
+            cursor: pointer;
+        }
+        .main-card:hover {
+            transform: translateY(-12px) scale(1.02);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+        }
+        .main-card.auto {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        .main-card.analyzer {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+        .main-card.manual {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="max-w-6xl w-full">
+        <!-- Header -->
+        <div class="text-center mb-16">
+            <h1 class="text-6xl font-bold text-white mb-4">
+                🎨 Fuzzy Logic Image Processing
+            </h1>
+            <p class="text-2xl text-white opacity-90">
+                Choose your enhancement method
+            </p>
+        </div>
+
+        <!-- Main Options -->
+        <div class="grid md:grid-cols-3 gap-8 mb-12">
+            <!-- AI Auto Enhancer -->
+            <div class="main-card auto rounded-3xl p-10 text-center text-white shadow-2xl" onclick="window.location.href='ai_auto_enhancer_advanced.html'"></div>
+                <div class="text-8xl mb-6">✨</div>
+                <h2 class="text-3xl font-bold mb-4">AI Auto Enhancer</h2>
+                <span class="badge mb-6">RECOMMENDED</span>
+                <p class="text-lg opacity-90 mb-8 leading-relaxed">
+                    One-click automatic enhancement. AI intelligently applies all filters for perfect results.
+                </p>
+                <div class="bg-white bg-opacity-20 rounded-xl p-4 mb-6">
+                    <p class="font-semibold mb-3">What it does:</p>
+                    <ul class="text-sm space-y-2 text-left">
+                        <li>✓ Automatic noise reduction</li>
+                        <li>✓ Smart contrast enhancement</li>
+                        <li>✓ Intelligent edge correction</li>
+                        <li>✓ No manual adjustment needed</li>
+                    </ul>
+                </div>
+                <button class="bg-white text-green-600 font-bold py-4 px-8 rounded-xl hover:bg-opacity-90 transition-all text-lg w-full shadow-lg">
+                    Start Auto Enhancement →
+                </button>
+            </div>
+
+            <!-- AI Image Analyzer -->
+            <div class="main-card analyzer rounded-3xl p-10 text-center text-white shadow-2xl" onclick="window.location.href='ai_image_analyzer.html'">
+                <div class="text-8xl mb-6">🤖</div>
+                <h2 class="text-3xl font-bold mb-4">AI Image Analyzer</h2>
+                <span class="badge mb-6">SMART RECOMMENDATIONS</span>
+                <p class="text-lg opacity-90 mb-8 leading-relaxed">
+                    Get intelligent recommendations on which filters to apply based on image analysis.
+                </p>
+                <div class="bg-white bg-opacity-20 rounded-xl p-4 mb-6">
+                    <p class="font-semibold mb-3">What it does:</p>
+                    <ul class="text-sm space-y-2 text-left">
+                        <li>✓ Analyzes image quality</li>
+                        <li>✓ Recommends best filters</li>
+                        <li>✓ Shows confidence scores</li>
+                        <li>✓ Suggests processing order</li>
+                    </ul>
+                </div>
+                <button class="bg-white text-orange-600 font-bold py-4 px-8 rounded-xl hover:bg-opacity-90 transition-all text-lg w-full shadow-lg">
+                    Analyze My Image →
+                </button>
+            </div>
+
+            <!-- Manual Enhancer -->
+            <div class="main-card manual rounded-3xl p-10 text-center text-white shadow-2xl" onclick="window.location.href='manual_enhancer.html'">
+                <div class="text-8xl mb-6">🛠️</div>
+                <h2 class="text-3xl font-bold mb-4">Manual Enhancer</h2>
+                <span class="badge mb-6">FULL CONTROL</span>
+                <p class="text-lg opacity-90 mb-8 leading-relaxed">
+                    Choose specific tools and adjust parameters manually for precise control.
+                </p>
+                <div class="bg-white bg-opacity-20 rounded-xl p-4 mb-6">
+                    <p class="font-semibold mb-3">Available tools:</p>
+                    <ul class="text-sm space-y-2 text-left">
+                        <li>✓ Contrast enhancer</li>
+                        <li>✓ Noise reducer</li>
+                        <li>✓ Edge corrector</li>
+                        <li>✓ Adjustable parameters</li>
+                    </ul>
+                </div>
+                <button class="bg-white text-purple-600 font-bold py-4 px-8 rounded-xl hover:bg-opacity-90 transition-all text-lg w-full shadow-lg">
+                    Choose Manual Tools →
+                </button>
+            </div>
+        </div>
+
+        <!-- Info Section -->
+        <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-2xl p-8 text-white">
+            <div class="grid md:grid-cols-3 gap-8 text-center">
+                <div>
+                    <div class="text-4xl mb-3">⚡</div>
+                    <h3 class="font-bold text-xl mb-2">Fast Processing</h3>
+                    <p class="opacity-90 text-sm">Real-time enhancement with immediate results</p>
+                </div>
+                <div>
+                    <div class="text-4xl mb-3">🔒</div>
+                    <h3 class="font-bold text-xl mb-2">Privacy First</h3>
+                    <p class="opacity-90 text-sm">All processing happens in your browser</p>
+                </div>
+                <div>
+                    <div class="text-4xl mb-3">🎯</div>
+                    <h3 class="font-bold text-xl mb-2">Fuzzy Logic AI</h3>
+                    <p class="opacity-90 text-sm">Advanced algorithms for optimal results</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-8">
+            <p class="text-white opacity-75 text-sm">
+                Powered by Fuzzy Logic Algorithms • Client-side Processing • No Server Required
+            </p>
+        </div>
+    </div>
+</body>
+</html>

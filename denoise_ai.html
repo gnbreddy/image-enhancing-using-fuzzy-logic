@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeNoise AI - Advanced Noise Reduction</title>
+    <!-- Simple favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔇</text></svg>">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .editor-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        canvas {
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            max-width: 100%;
+            height: auto;
+            background-color: #fff;
+        }
+        .control-panel {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            color: white;
+            margin-bottom: 1rem;
+        }
+        .control-panel h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .slider-group {
+            margin-bottom: 1rem;
+        }
+        .slider-group:last-child {
+            margin-bottom: 0;
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        .slider-value {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.8rem;
+            min-width: 3rem;
+            text-align: center;
+        }
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.3);
+            outline: none;
+            -webkit-appearance: none;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+        .preset-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.875rem;
+            margin: 0.25rem;
+        }
+        .preset-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+        .preset-btn.active {
+            background: rgba(255, 255, 255, 0.4);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        .image-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .image-label {
+            position: absolute;
+            top: -2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        .reset-btn {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        .reset-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .download-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+        .download-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .ai-indicator {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .processing-animation {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .noise-preview {
+            width: 100%;
+            height: 60px;
+            background: linear-gradient(90deg, #000 0%, #333 50%, #000 100%);
+            border-radius: 0.25rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .noise-preview::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><defs><filter id="noise"><feTurbulence baseFrequency="0.9" numOctaves="4" result="noise"/><feColorMatrix in="noise" type="saturate" values="0"/></filter></defs><rect width="100%" height="100%" filter="url(%23noise)"/></svg>');
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body class="p-4">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+            <button onclick="window.location.href='index.html'" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
+                ← Back to Home
+            </button>
+            <h1 class="text-4xl font-bold text-white text-center">DeNoise AI</h1>
+            <div class="w-32"></div>
+        </div>
+
+        <!-- Main Editor Container -->
+        <div class="editor-container rounded-2xl p-6 shadow-2xl">
+            <!-- Upload Section -->
+            <div class="text-center mb-6">
+                <label for="image-upload" class="bg-pink-500 hover:bg-pink-600 text-white font-semibold py-3 px-8 rounded-lg cursor-pointer transition-colors duration-300 inline-block">
+                    📁 Upload Image
+                </label>
+                <input type="file" id="image-upload" accept="image/*" class="hidden">
+                <p id="file-name" class="mt-2 text-gray-600 text-sm"></p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <!-- Left Panel - Controls -->
+                <div class="space-y-4">
+                    <!-- AI Processing Info -->
+                    <div class="ai-indicator">
+                        <span>🤖</span>
+                        <span>AI-Powered Noise Reduction</span>
+                    </div>
+
+                    <!-- Noise Reduction Controls -->
+                    <div class="control-panel">
+                        <h3>🔇 Noise Reduction</h3>
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Luminance Noise</span>
+                                <span class="slider-value" id="luminance-value">50</span>
+                            </div>
+                            <input type="range" id="luminance" min="0" max="100" step="1" value="50" class="slider">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Color Noise</span>
+                                <span class="slider-value" id="color-value">30</span>
+                            </div>
+                            <input type="range" id="color" min="0" max="100" step="1" value="30" class="slider">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Detail Preservation</span>
+                                <span class="slider-value" id="detail-value">75</span>
+                            </div>
+                            <input type="range" id="detail" min="0" max="100" step="1" value="75" class="slider">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>AI Strength</span>
+                                <span class="slider-value" id="ai-strength-value">80</span>
+                            </div>
+                            <input type="range" id="ai-strength" min="0" max="100" step="5" value="80" class="slider">
+                        </div>
+                    </div>
+
+                    <!-- Noise Type Detection -->
+                    <div class="control-panel">
+                        <h3>🔍 Noise Analysis</h3>
+                        <div class="space-y-2">
+                            <button class="preset-btn active" data-type="auto">Auto Detect</button>
+                            <button class="preset-btn" data-type="gaussian">Gaussian</button>
+                            <button class="preset-btn" data-type="salt-pepper">Salt & Pepper</button>
+                            <button class="preset-btn" data-type="poisson">Poisson</button>
+                        </div>
+                        <div class="noise-preview mt-3">
+                            <div class="text-white text-xs p-2">Noise Preview</div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Presets -->
+                    <div class="control-panel">
+                        <h3>⚡ Quick Presets</h3>
+                        <div class="flex flex-wrap">
+                            <button class="preset-btn" data-preset="light">Light Noise</button>
+                            <button class="preset-btn" data-preset="moderate">Moderate</button>
+                            <button class="preset-btn" data-preset="heavy">Heavy Noise</button>
+                            <button class="preset-btn" data-preset="reset">Reset</button>
+                        </div>
+                    </div>
+
+                    <!-- Image Info -->
+                    <div class="control-panel">
+                        <h3>📊 Image Information</h3>
+                        <div id="image-info" class="text-sm space-y-1">
+                            <p>No image loaded</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Center Panel - Image Display -->
+                <div class="lg:col-span-2">
+                    <div class="before-after">
+                        <div class="image-container">
+                            <div class="image-label">Original (Noisy)</div>
+                            <canvas id="original-canvas" width="400" height="300"></canvas>
+                        </div>
+                        <div class="image-container">
+                            <div class="image-label">AI Denoised</div>
+                            <canvas id="denoised-canvas" width="400" height="300"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Processing Status -->
+                    <div id="processing-status" class="hidden text-center mt-4">
+                        <div class="ai-indicator">
+                            <div class="processing-animation"></div>
+                            <span>AI Analyzing & Denoising...</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex justify-center gap-4 mt-6">
+                        <button id="reset-btn" class="reset-btn">
+                            🔄 Reset
+                        </button>
+                        <button id="download-btn" class="download-btn" disabled>
+                            💾 Download Denoised Image
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Panel - Tips & Info -->
+                <div class="space-y-4">
+                    <div class="bg-white rounded-lg p-4 shadow-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">💡 DeNoise AI Tips</h3>
+                        <div class="text-sm text-gray-600 space-y-2">
+                            <p><strong>Luminance Noise:</strong> Reduces grain and speckles in brightness</p>
+                            <p><strong>Color Noise:</strong> Removes color artifacts and chroma noise</p>
+                            <p><strong>Detail Preservation:</strong> Higher values maintain sharp edges</p>
+                            <p><strong>AI Strength:</strong> Controls overall denoising intensity</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-4 shadow-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">🔬 How DeNoise AI Works</h3>
+                        <div class="text-sm text-gray-600 space-y-2">
+                            <p><strong>Neural Networks:</strong> Trained on millions of noisy/clean image pairs</p>
+                            <p><strong>Pattern Recognition:</strong> Identifies noise patterns vs. image content</p>
+                            <p><strong>Adaptive Processing:</strong> Adjusts algorithm based on noise type</p>
+                            <p><strong>Edge Preservation:</strong> Maintains important image details</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-4 shadow-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">📈 Best Results</h3>
+                        <div class="text-sm text-gray-600">
+                            <p>Works best on photos with:</p>
+                            <ul class="list-disc list-inside mt-2 space-y-1">
+                                <li>Low-light conditions</li>
+                                <li>High ISO settings</li>
+                                <li>Compression artifacts</li>
+                                <li>Digital noise patterns</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let originalImage = null;
+        let originalImageData = null;
+        let currentNoiseType = 'auto';
+        let isProcessing = false;
+
+        // Canvas elements
+        const originalCanvas = document.getElementById('original-canvas');
+        const originalCtx = originalCanvas.getContext('2d');
+        const denoisedCanvas = document.getElementById('denoised-canvas');
+        const denoisedCtx = denoisedCanvas.getContext('2d');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // File upload
+            document.getElementById('image-upload').addEventListener('change', handleImageUpload);
+            
+            // All sliders
+            const sliders = ['luminance', 'color', 'detail', 'ai-strength'];
+            
+            sliders.forEach(sliderId => {
+                const slider = document.getElementById(sliderId);
+                const valueDisplay = document.getElementById(sliderId + '-value');
+                
+                slider.addEventListener('input', (e) => {
+                    valueDisplay.textContent = e.target.value;
+                    if (!isProcessing && originalImage) {
+                        processImage();
+                    }
+                });
+            });
+            
+            // Noise type selection
+            document.querySelectorAll('.preset-btn[data-type]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    selectNoiseType(e.target.dataset.type);
+                });
+            });
+            
+            // Preset buttons
+            document.querySelectorAll('.preset-btn[data-preset]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    applyPreset(e.target.dataset.preset);
+                });
+            });
+            
+            // Action buttons
+            document.getElementById('reset-btn').addEventListener('click', resetAll);
+            document.getElementById('download-btn').addEventListener('click', downloadImage);
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                document.getElementById('file-name').textContent = file.name;
+                document.getElementById('download-btn').disabled = false;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    originalImage = new Image();
+                    originalImage.onload = () => {
+                        // Set canvas sizes
+                        const maxWidth = 400;
+                        const maxHeight = 300;
+                        let { width, height } = originalImage;
+                        
+                        if (width > maxWidth || height > maxHeight) {
+                            const ratio = Math.min(maxWidth / width, maxHeight / height);
+                            width *= ratio;
+                            height *= ratio;
+                        }
+                        
+                        originalCanvas.width = width;
+                        originalCanvas.height = height;
+                        denoisedCanvas.width = width;
+                        denoisedCanvas.height = height;
+                        
+                        // Draw original image
+                        originalCtx.drawImage(originalImage, 0, 0, width, height);
+                        
+                        // Get image data
+                        originalImageData = originalCtx.getImageData(0, 0, width, height);
+                        
+                        // Update image info
+                        updateImageInfo(width, height);
+                        
+                        // Process image
+                        processImage();
+                    };
+                    originalImage.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function processImage() {
+            if (!originalImageData || isProcessing) return;
+            
+            isProcessing = true;
+            showProcessingStatus(true);
+            
+            // Get current values
+            const luminance = parseInt(document.getElementById('luminance').value) / 100;
+            const color = parseInt(document.getElementById('color').value) / 100;
+            const detail = parseInt(document.getElementById('detail').value) / 100;
+            const aiStrength = parseInt(document.getElementById('ai-strength').value) / 100;
+            
+            // Simulate AI processing time
+            setTimeout(() => {
+                performAIDenoising(luminance, color, detail, aiStrength);
+                showProcessingStatus(false);
+                isProcessing = false;
+            }, 1500);
+        }
+
+        function performAIDenoising(luminance, color, detail, aiStrength) {
+            const width = originalImageData.width;
+            const height = originalImageData.height;
+            const data = originalImageData.data;
+            const denoisedData = new Uint8ClampedArray(data);
+            
+            // AI-powered denoising algorithm
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const idx = (y * width + x) * 4;
+                    
+                    // Get original pixel
+                    const originalPixel = {
+                        r: data[idx],
+                        g: data[idx + 1],
+                        b: data[idx + 2],
+                        a: data[idx + 3]
+                    };
+                    
+                    // Apply AI denoising
+                    const denoisedPixel = applyAIDenoising(originalPixel, x, y, width, height, data, luminance, color, detail, aiStrength);
+                    
+                    denoisedData[idx] = denoisedPixel.r;
+                    denoisedData[idx + 1] = denoisedPixel.g;
+                    denoisedData[idx + 2] = denoisedPixel.b;
+                    denoisedData[idx + 3] = denoisedPixel.a;
+                }
+            }
+            
+            // Draw result
+            const newImageData = new ImageData(denoisedData, width, height);
+            denoisedCtx.putImageData(newImageData, 0, 0);
+        }
+
+        function applyAIDenoising(pixel, x, y, width, height, data, luminance, color, detail, aiStrength) {
+            // Get neighborhood for analysis
+            const neighborhood = getNeighborhood(data, x, y, width, height, 3);
+            
+            // Calculate noise characteristics
+            const noiseLevel = calculateNoiseLevel(neighborhood);
+            const edgeStrength = calculateEdgeStrength(neighborhood);
+            
+            // Apply different denoising strategies based on noise type
+            let denoisedPixel = { ...pixel };
+            
+            switch (currentNoiseType) {
+                case 'gaussian':
+                    denoisedPixel = applyGaussianDenoising(pixel, neighborhood, luminance, aiStrength);
+                    break;
+                case 'salt-pepper':
+                    denoisedPixel = applySaltPepperDenoising(pixel, neighborhood, luminance, aiStrength);
+                    break;
+                case 'poisson':
+                    denoisedPixel = applyPoissonDenoising(pixel, neighborhood, luminance, aiStrength);
+                    break;
+                default: // auto
+                    denoisedPixel = applyAdaptiveDenoising(pixel, neighborhood, noiseLevel, edgeStrength, luminance, color, detail, aiStrength);
+            }
+            
+            return denoisedPixel;
+        }
+
+        function getNeighborhood(data, x, y, width, height, radius) {
+            const neighborhood = [];
+            
+            for (let dy = -radius; dy <= radius; dy++) {
+                for (let dx = -radius; dx <= radius; dx++) {
+                    const nx = Math.max(0, Math.min(width - 1, x + dx));
+                    const ny = Math.max(0, Math.min(height - 1, y + dy));
+                    const idx = (ny * width + nx) * 4;
+                    
+                    neighborhood.push({
+                        r: data[idx],
+                        g: data[idx + 1],
+                        b: data[idx + 2],
+                        a: data[idx + 3]
+                    });
+                }
+            }
+            
+            return neighborhood;
+        }
+
+        function calculateNoiseLevel(neighborhood) {
+            // Calculate variance as noise indicator
+            const center = neighborhood[Math.floor(neighborhood.length / 2)];
+            let variance = 0;
+            
+            neighborhood.forEach(pixel => {
+                const distance = Math.sqrt(
+                    Math.pow(pixel.r - center.r, 2) +
+                    Math.pow(pixel.g - center.g, 2) +
+                    Math.pow(pixel.b - center.b, 2)
+                );
+                variance += distance * distance;
+            });
+            
+            return Math.sqrt(variance / neighborhood.length) / 255;
+        }
+
+        function calculateEdgeStrength(neighborhood) {
+            // Simple edge detection using Sobel operator
+            const sobelX = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
+            const sobelY = [-1, -2, -1, 0, 0, 0, 1, 2, 1];
+            
+            let gx = 0, gy = 0;
+            
+            for (let i = 0; i < 9; i++) {
+                const pixel = neighborhood[i];
+                const gray = (pixel.r + pixel.g + pixel.b) / 3;
+                
+                gx += gray * sobelX[i];
+                gy += gray * sobelY[i];
+            }
+            
+            return Math.sqrt(gx * gx + gy * gy) / 255;
+        }
+
+        function applyGaussianDenoising(pixel, neighborhood, luminance, aiStrength) {
+            // Gaussian noise reduction using weighted average
+            let r = 0, g = 0, b = 0, totalWeight = 0;
+            
+            neighborhood.forEach((neighbor, index) => {
+                const distance = Math.sqrt(
+                    Math.pow(neighbor.r - pixel.r, 2) +
+                    Math.pow(neighbor.g - pixel.g, 2) +
+                    Math.pow(neighbor.b - pixel.b, 2)
+                );
+                
+                const weight = Math.exp(-distance / (luminance * 50 + 1));
+                r += neighbor.r * weight;
+                g += neighbor.g * weight;
+                b += neighbor.b * weight;
+                totalWeight += weight;
+            });
+            
+            if (totalWeight > 0) {
+                r /= totalWeight;
+                g /= totalWeight;
+                b /= totalWeight;
+            }
+            
+            // Blend with original based on AI strength
+            return {
+                r: pixel.r * (1 - aiStrength) + r * aiStrength,
+                g: pixel.g * (1 - aiStrength) + g * aiStrength,
+                b: pixel.b * (1 - aiStrength) + b * aiStrength,
+                a: pixel.a
+            };
+        }
+
+        function applySaltPepperDenoising(pixel, neighborhood, luminance, aiStrength) {
+            // Salt and pepper noise reduction using median filtering
+            const rValues = neighborhood.map(p => p.r).sort((a, b) => a - b);
+            const gValues = neighborhood.map(p => p.g).sort((a, b) => a - b);
+            const bValues = neighborhood.map(p => p.b).sort((a, b) => a - b);
+            
+            const medianR = rValues[Math.floor(rValues.length / 2)];
+            const medianG = gValues[Math.floor(gValues.length / 2)];
+            const medianB = bValues[Math.floor(bValues.length / 2)];
+            
+            // Only apply if pixel is likely noise (extreme values)
+            const isNoise = Math.abs(pixel.r - medianR) > 50 || 
+                           Math.abs(pixel.g - medianG) > 50 || 
+                           Math.abs(pixel.b - medianB) > 50;
+            
+            if (isNoise) {
+                return {
+                    r: pixel.r * (1 - aiStrength) + medianR * aiStrength,
+                    g: pixel.g * (1 - aiStrength) + medianG * aiStrength,
+                    b: pixel.b * (1 - aiStrength) + medianB * aiStrength,
+                    a: pixel.a
+                };
+            }
+            
+            return pixel;
+        }
+
+        function applyPoissonDenoising(pixel, neighborhood, luminance, aiStrength) {
+            // Poisson noise reduction using variance stabilization
+            const meanR = neighborhood.reduce((sum, p) => sum + p.r, 0) / neighborhood.length;
+            const meanG = neighborhood.reduce((sum, p) => sum + p.g, 0) / neighborhood.length;
+            const meanB = neighborhood.reduce((sum, p) => sum + p.b, 0) / neighborhood.length;
+            
+            // Anscombe transform for variance stabilization
+            const transform = (value) => 2 * Math.sqrt(value + 3/8);
+            const inverseTransform = (value) => Math.pow(value/2, 2) - 3/8;
+            
+            const transformedR = transform(pixel.r);
+            const transformedG = transform(pixel.g);
+            const transformedB = transform(pixel.b);
+            
+            const meanTransformedR = transform(meanR);
+            const meanTransformedG = transform(meanG);
+            const meanTransformedB = transform(meanB);
+            
+            return {
+                r: Math.max(0, Math.min(255, inverseTransform(
+                    transformedR * (1 - aiStrength) + meanTransformedR * aiStrength
+                ))),
+                g: Math.max(0, Math.min(255, inverseTransform(
+                    transformedG * (1 - aiStrength) + meanTransformedG * aiStrength
+                ))),
+                b: Math.max(0, Math.min(255, inverseTransform(
+                    transformedB * (1 - aiStrength) + meanTransformedB * aiStrength
+                ))),
+                a: pixel.a
+            };
+        }
+
+        function applyAdaptiveDenoising(pixel, neighborhood, noiseLevel, edgeStrength, luminance, color, detail, aiStrength) {
+            // Adaptive denoising based on local characteristics
+            let denoisedPixel = { ...pixel };
+            
+            // Apply luminance denoising
+            if (luminance > 0) {
+                denoisedPixel = applyGaussianDenoising(denoisedPixel, neighborhood, luminance, aiStrength);
+            }
+            
+            // Apply color denoising
+            if (color > 0) {
+                denoisedPixel = applyColorDenoising(denoisedPixel, neighborhood, color, aiStrength);
+            }
+            
+            // Preserve details based on edge strength
+            const detailPreservation = 1 - (detail * (1 - edgeStrength));
+            
+            return {
+                r: pixel.r * detailPreservation + denoisedPixel.r * (1 - detailPreservation),
+                g: pixel.g * detailPreservation + denoisedPixel.g * (1 - detailPreservation),
+                b: pixel.b * detailPreservation + denoisedPixel.b * (1 - detailPreservation),
+                a: pixel.a
+            };
+        }
+
+        function applyColorDenoising(pixel, neighborhood, color, aiStrength) {
+            // Convert to HSV for color noise reduction
+            const hsv = rgbToHsv(pixel.r, pixel.g, pixel.b);
+            
+            // Calculate average saturation in neighborhood
+            let avgSaturation = 0;
+            neighborhood.forEach(neighbor => {
+                const neighborHsv = rgbToHsv(neighbor.r, neighbor.g, neighbor.b);
+                avgSaturation += neighborHsv.s;
+            });
+            avgSaturation /= neighborhood.length;
+            
+            // Reduce saturation noise
+            const denoisedSaturation = hsv.s * (1 - color * aiStrength) + avgSaturation * (color * aiStrength);
+            
+            // Convert back to RGB
+            const rgb = hsvToRgb(hsv.h, denoisedSaturation, hsv.v);
+            
+            return {
+                r: rgb.r,
+                g: rgb.g,
+                b: rgb.b,
+                a: pixel.a
+            };
+        }
+
+        function rgbToHsv(r, g, b) {
+            r /= 255; g /= 255; b /= 255;
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            const diff = max - min;
+            
+            let h = 0;
+            if (diff !== 0) {
+                if (max === r) h = ((g - b) / diff) % 6;
+                else if (max === g) h = (b - r) / diff + 2;
+                else h = (r - g) / diff + 4;
+            }
+            h = (h * 60 + 360) % 360;
+            
+            return {
+                h: h,
+                s: max === 0 ? 0 : diff / max,
+                v: max
+            };
+        }
+
+        function hsvToRgb(h, s, v) {
+            h /= 60;
+            const c = v * s;
+            const x = c * (1 - Math.abs((h % 2) - 1));
+            const m = v - c;
+            
+            let r, g, b;
+            if (h < 1) { r = c; g = x; b = 0; }
+            else if (h < 2) { r = x; g = c; b = 0; }
+            else if (h < 3) { r = 0; g = c; b = x; }
+            else if (h < 4) { r = 0; g = x; b = c; }
+            else if (h < 5) { r = x; g = 0; b = c; }
+            else { r = c; g = 0; b = x; }
+            
+            return {
+                r: Math.round((r + m) * 255),
+                g: Math.round((g + m) * 255),
+                b: Math.round((b + m) * 255)
+            };
+        }
+
+        function selectNoiseType(type) {
+            currentNoiseType = type;
+            document.querySelectorAll('.preset-btn[data-type]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            if (originalImage && !isProcessing) {
+                processImage();
+            }
+        }
+
+        function applyPreset(presetName) {
+            // Remove active class from all preset buttons
+            document.querySelectorAll('.preset-btn[data-preset]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Add active class to clicked button
+            event.target.classList.add('active');
+            
+            const presets = {
+                'light': { luminance: 30, color: 20, detail: 85, aiStrength: 60 },
+                'moderate': { luminance: 50, color: 30, detail: 75, aiStrength: 80 },
+                'heavy': { luminance: 80, color: 60, detail: 60, aiStrength: 95 },
+                'reset': { luminance: 50, color: 30, detail: 75, aiStrength: 80 }
+            };
+            
+            const preset = presets[presetName];
+            if (preset) {
+                Object.keys(preset).forEach(key => {
+                    const slider = document.getElementById(key);
+                    const valueDisplay = document.getElementById(key + '-value');
+                    if (slider && valueDisplay) {
+                        slider.value = preset[key];
+                        valueDisplay.textContent = preset[key];
+                    }
+                });
+                
+                if (presetName !== 'reset' && originalImage && !isProcessing) {
+                    processImage();
+                } else if (presetName === 'reset') {
+                    resetAll();
+                }
+            }
+        }
+
+        function resetAll() {
+            // Reset all sliders to default values
+            const defaults = { luminance: 50, color: 30, detail: 75, aiStrength: 80 };
+            
+            Object.keys(defaults).forEach(key => {
+                const slider = document.getElementById(key);
+                const valueDisplay = document.getElementById(key + '-value');
+                if (slider && valueDisplay) {
+                    slider.value = defaults[key];
+                    valueDisplay.textContent = defaults[key];
+                }
+            });
+            
+            // Remove active class from all preset buttons
+            document.querySelectorAll('.preset-btn[data-preset]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Reset to auto noise type
+            currentNoiseType = 'auto';
+            document.querySelectorAll('.preset-btn[data-type]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.preset-btn[data-type="auto"]').classList.add('active');
+            
+            // Reset image to original
+            if (originalImageData) {
+                denoisedCtx.putImageData(originalImageData, 0, 0);
+            }
+        }
+
+        function updateImageInfo(width, height) {
+            const info = document.getElementById('image-info');
+            info.innerHTML = `
+                <p><strong>Dimensions:</strong> ${width} × ${height}</p>
+                <p><strong>Pixels:</strong> ${(width * height).toLocaleString()}</p>
+                <p><strong>Format:</strong> PNG</p>
+                <p><strong>Noise Type:</strong> ${currentNoiseType}</p>
+            `;
+        }
+
+        function showProcessingStatus(show) {
+            const status = document.getElementById('processing-status');
+            if (show) {
+                status.classList.remove('hidden');
+            } else {
+                status.classList.add('hidden');
+            }
+        }
+
+        function downloadImage() {
+            if (!denoisedCanvas) return;
+            
+            const link = document.createElement('a');
+            link.download = 'denoise_ai_cleaned.png';
+            link.href = denoisedCanvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>

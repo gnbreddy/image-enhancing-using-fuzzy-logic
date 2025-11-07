@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Image Analyzer - Smart Filter Recommendations</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .analysis-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .analysis-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 12px rgba(0,0,0,0.15);
+        }
+        .metric-bar {
+            height: 8px;
+            border-radius: 4px;
+            background: #e5e7eb;
+            overflow: hidden;
+        }
+        .metric-fill {
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        .badge-high { background: #10b981; color: white; }
+        .badge-medium { background: #f59e0b; color: white; }
+        .badge-low { background: #6b7280; color: white; }
+        canvas {
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            max-width: 100%;
+            height: auto;
+            background: white;
+        }
+        .ai-thinking {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="max-w-6xl w-full">
+        <div class="bg-white p-8 rounded-2xl shadow-xl">
+            <div class="flex items-center justify-between mb-6">
+                <button onclick="window.location.href='index.html'" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
+                    ← Back to Home
+                </button>
+                <h1 class="text-3xl font-bold text-gray-800">🤖 AI Image Analyzer</h1>
+                <div class="w-32"></div>
+            </div>
+
+            <p class="text-center text-gray-600 mb-6">
+                Upload an image and let our AI agent analyze it to recommend the best enhancement filters
+            </p>
+
+            <div class="flex flex-col items-center mb-6">
+                <label for="image-upload" class="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-8 rounded-lg cursor-pointer transition-all duration-300 shadow-lg">
+                    📤 Upload Image for AI Analysis
+                </label>
+                <input type="file" id="image-upload" accept="image/*" class="hidden">
+                <p id="file-name" class="mt-2 text-gray-600 text-sm"></p>
+            </div>
+
+            <div id="analysis-section" class="hidden">
+                <div id="ai-thinking" class="hidden text-center py-8">
+                    <div class="inline-block">
+                        <div class="ai-thinking text-6xl mb-4">🤖</div>
+                        <p class="text-xl font-semibold text-purple-600">AI Agent Analyzing Image...</p>
+                        <p class="text-gray-500 mt-2">Evaluating quality metrics and generating recommendations</p>
+                    </div>
+                </div>
+
+                <div class="mb-6 text-center">
+                    <canvas id="image-canvas" class="mx-auto"></canvas>
+                </div>
+
+                <div id="results-section" class="hidden">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">📊 Image Quality Analysis</h2>
+                    
+                    <div class="grid md:grid-cols-3 gap-4 mb-6">
+                        <div class="analysis-card">
+                            <h3 class="font-semibold text-gray-700 mb-2">Contrast Level</h3>
+                            <div class="metric-bar mb-2">
+                                <div id="contrast-bar" class="metric-fill bg-blue-500" style="width: 0%"></div>
+                            </div>
+                            <p id="contrast-value" class="text-2xl font-bold text-gray-800">0%</p>
+                            <p id="contrast-status" class="text-sm text-gray-600 mt-1"></p>
+                        </div>
+
+                        <div class="analysis-card">
+                            <h3 class="font-semibold text-gray-700 mb-2">Noise Level</h3>
+                            <div class="metric-bar mb-2">
+                                <div id="noise-bar" class="metric-fill bg-purple-500" style="width: 0%"></div>
+                            </div>
+                            <p id="noise-value" class="text-2xl font-bold text-gray-800">0%</p>
+                            <p id="noise-status" class="text-sm text-gray-600 mt-1"></p>
+                        </div>
+
+                        <div class="analysis-card">
+                            <h3 class="font-semibold text-gray-700 mb-2">Edge Quality</h3>
+                            <div class="metric-bar mb-2">
+                                <div id="edge-bar" class="metric-fill bg-pink-500" style="width: 0%"></div>
+                            </div>
+                            <p id="edge-value" class="text-2xl font-bold text-gray-800">0%</p>
+                            <p id="edge-status" class="text-sm text-gray-600 mt-1"></p>
+                        </div>
+                    </div>
+
+                    <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4">🎯 AI Recommendations</h2>
+                        <p class="text-gray-600 mb-4" id="overall-assessment"></p>
+                        
+                        <div class="space-y-4">
+                            <div id="rec-contrast" class="bg-white p-4 rounded-lg shadow">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-3xl">🖼️</span>
+                                        <div>
+                                            <h3 class="font-bold text-gray-800">Contrast Enhancer</h3>
+                                            <p class="text-sm text-gray-600" id="contrast-reason"></p>
+                                        </div>
+                                    </div>
+                                    <span id="contrast-badge" class="badge"></span>
+                                </div>
+                                <button id="apply-contrast" class="hidden w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors mt-2">
+                                    Apply Contrast Enhancement →
+                                </button>
+                            </div>
+
+                            <div id="rec-noise" class="bg-white p-4 rounded-lg shadow">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-3xl">🔧</span>
+                                        <div>
+                                            <h3 class="font-bold text-gray-800">Noise Reducer</h3>
+                                            <p class="text-sm text-gray-600" id="noise-reason"></p>
+                                        </div>
+                                    </div>
+                                    <span id="noise-badge" class="badge"></span>
+                                </div>
+                                <button id="apply-noise" class="hidden w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors mt-2">
+                                    Apply Noise Reduction →
+                                </button>
+                            </div>
+
+                            <div id="rec-edge" class="bg-white p-4 rounded-lg shadow">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-3xl">✏️</span>
+                                        <div>
+                                            <h3 class="font-bold text-gray-800">Edge Corrector</h3>
+                                            <p class="text-sm text-gray-600" id="edge-reason"></p>
+                                        </div>
+                                    </div>
+                                    <span id="edge-badge" class="badge"></span>
+                                </div>
+                                <button id="apply-edge" class="hidden w-full bg-pink-500 hover:bg-pink-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors mt-2">
+                                    Apply Edge Correction →
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50 p-6 rounded-xl">
+                        <h3 class="font-bold text-gray-800 mb-3">💡 Recommended Processing Order:</h3>
+                        <ol id="processing-order" class="list-decimal list-inside space-y-2 text-gray-700">
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const imageUpload = document.getElementById('image-upload');
+        const fileNameDisplay = document.getElementById('file-name');
+        const analysisSection = document.getElementById('analysis-section');
+        const aiThinking = document.getElementById('ai-thinking');
+        const resultsSection = document.getElementById('results-section');
+        const imageCanvas = document.getElementById('image-canvas');
+        const ctx = imageCanvas.getContext('2d');
+        
+        let uploadedImage = null;
+
+        imageUpload.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                fileNameDisplay.textContent = file.name;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    uploadedImage = new Image();
+                    uploadedImage.onload = () => {
+                        imageCanvas.width = uploadedImage.width;
+                        imageCanvas.height = uploadedImage.height;
+                        ctx.drawImage(uploadedImage, 0, 0);
+                        
+                        analysisSection.classList.remove('hidden');
+                        aiThinking.classList.remove('hidden');
+                        resultsSection.classList.add('hidden');
+                        
+                        setTimeout(() => {
+                            analyzeImage();
+                        }, 2000);
+                    };
+                    uploadedImage.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+
+        function analyzeImage() {
+            const imageData = ctx.getImageData(0, 0, imageCanvas.width, imageCanvas.height);
+            const data = imageData.data;
+            
+            const contrastScore = analyzeContrast(data);
+            const noiseScore = analyzeNoise(data, imageCanvas.width, imageCanvas.height);
+            const edgeScore = analyzeEdges(data, imageCanvas.width, imageCanvas.height);
+            
+            const recommendations = generateRecommendations(contrastScore, noiseScore, edgeScore);
+            
+            displayResults(contrastScore, noiseScore, edgeScore, recommendations);
+            
+            aiThinking.classList.add('hidden');
+            resultsSection.classList.remove('hidden');
+        }
+
+        function analyzeContrast(data) {
+            let min = 255, max = 0;
+            const grayscale = [];
+            
+            for (let i = 0; i < data.length; i += 4) {
+                const gray = (data[i] + data[i+1] + data[i+2]) / 3;
+                grayscale.push(gray);
+                min = Math.min(min, gray);
+                max = Math.max(max, gray);
+            }
+            
+            const range = max - min;
+            const mean = grayscale.reduce((a, b) => a + b) / grayscale.length;
+            const variance = grayscale.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / grayscale.length;
+            const stdDev = Math.sqrt(variance);
+            
+            const score = Math.min(100, (stdDev / 50) * 100);
+            
+            return {
+                score: score,
+                range: range,
+                stdDev: stdDev,
+                needsEnhancement: score < 60
+            };
+        }
+
+        function analyzeNoise(data, width, height) {
+            let totalVariance = 0;
+            let count = 0;
+            
+            for (let y = 1; y < height - 1; y += 10) {
+                for (let x = 1; x < width - 1; x += 10) {
+                    const idx = (y * width + x) * 4;
+                    const center = (data[idx] + data[idx+1] + data[idx+2]) / 3;
+                    
+                    let localSum = 0;
+                    let localCount = 0;
+                    
+                    for (let dy = -1; dy <= 1; dy++) {
+                        for (let dx = -1; dx <= 1; dx++) {
+                            const nIdx = ((y+dy) * width + (x+dx)) * 4;
+                            const neighbor = (data[nIdx] + data[nIdx+1] + data[nIdx+2]) / 3;
+                            localSum += Math.pow(neighbor - center, 2);
+                            localCount++;
+                        }
+                    }
+                    
+                    totalVariance += localSum / localCount;
+                    count++;
+                }
+            }
+            
+            const avgVariance = totalVariance / count;
+            const score = Math.min(100, (avgVariance / 100) * 100);
+            
+            return {
+                score: score,
+                variance: avgVariance,
+                needsReduction: score > 30
+            };
+        }
+
+        function analyzeEdges(data, width, height) {
+            let strongEdges = 0;
+            let weakEdges = 0;
+            let totalEdges = 0;
+            
+            const gray = new Array(width * height);
+            for (let i = 0; i < data.length; i += 4) {
+                gray[i / 4] = (data[i] + data[i+1] + data[i+2]) / 3;
+            }
+            
+            for (let y = 1; y < height - 1; y += 5) {
+                for (let x = 1; x < width - 1; x += 5) {
+                    const idx = y * width + x;
+                    
+                    const gx = (-1 * gray[(y-1)*width + (x-1)]) + (1 * gray[(y-1)*width + (x+1)]) +
+                              (-2 * gray[y*width + (x-1)]) + (2 * gray[y*width + (x+1)]) +
+                              (-1 * gray[(y+1)*width + (x-1)]) + (1 * gray[(y+1)*width + (x+1)]);
+                    
+                    const gy = (-1 * gray[(y-1)*width + (x-1)]) + (-2 * gray[(y-1)*width + x]) +
+                              (-1 * gray[(y-1)*width + (x+1)]) + (1 * gray[(y+1)*width + (x-1)]) +
+                              (2 * gray[(y+1)*width + x]) + (1 * gray[(y+1)*width + (x+1)]);
+                    
+                    const magnitude = Math.sqrt(gx * gx + gy * gy);
+                    
+                    if (magnitude > 50) {
+                        strongEdges++;
+                    } else if (magnitude > 20) {
+                        weakEdges++;
+                    }
+                    totalEdges++;
+                }
+            }
+            
+            const edgeQuality = (strongEdges / totalEdges) * 100;
+            const weakRatio = (weakEdges / totalEdges) * 100;
+            
+            return {
+                score: edgeQuality,
+                weakRatio: weakRatio,
+                needsCorrection: weakRatio > 15 || edgeQuality < 30
+            };
+        }
+
+        function generateRecommendations(contrast, noise, edge) {
+            const recommendations = {
+                contrast: { priority: 0, confidence: 0, reason: '' },
+                noise: { priority: 0, confidence: 0, reason: '' },
+                edge: { priority: 0, confidence: 0, reason: '' }
+            };
+            
+            if (contrast.score < 40) {
+                recommendations.contrast.priority = 3;
+                recommendations.contrast.confidence = 95;
+                recommendations.contrast.reason = 'Very low contrast detected. Enhancement highly recommended.';
+            } else if (contrast.score < 60) {
+                recommendations.contrast.priority = 2;
+                recommendations.contrast.confidence = 75;
+                recommendations.contrast.reason = 'Moderate contrast. Enhancement will improve visibility.';
+            } else {
+                recommendations.contrast.priority = 1;
+                recommendations.contrast.confidence = 30;
+                recommendations.contrast.reason = 'Good contrast. Enhancement optional.';
+            }
+            
+            if (noise.score > 50) {
+                recommendations.noise.priority = 3;
+                recommendations.noise.confidence = 90;
+                recommendations.noise.reason = 'High noise level detected. Reduction strongly recommended.';
+            } else if (noise.score > 30) {
+                recommendations.noise.priority = 2;
+                recommendations.noise.confidence = 70;
+                recommendations.noise.reason = 'Moderate noise present. Reduction will improve quality.';
+            } else {
+                recommendations.noise.priority = 1;
+                recommendations.noise.confidence = 25;
+                recommendations.noise.reason = 'Low noise level. Reduction optional.';
+            }
+            
+            if (edge.weakRatio > 25 || edge.score < 20) {
+                recommendations.edge.priority = 3;
+                recommendations.edge.confidence = 85;
+                recommendations.edge.reason = 'Many weak/broken edges detected. Correction recommended.';
+            } else if (edge.weakRatio > 15 || edge.score < 40) {
+                recommendations.edge.priority = 2;
+                recommendations.edge.confidence = 65;
+                recommendations.edge.reason = 'Some edge defects found. Correction will enhance sharpness.';
+            } else {
+                recommendations.edge.priority = 1;
+                recommendations.edge.confidence = 35;
+                recommendations.edge.reason = 'Good edge quality. Correction optional.';
+            }
+            
+            return recommendations;
+        }
+
+        function displayResults(contrast, noise, edge, recommendations) {
+            document.getElementById('contrast-bar').style.width = contrast.score + '%';
+            document.getElementById('contrast-value').textContent = Math.round(contrast.score) + '%';
+            document.getElementById('contrast-status').textContent = 
+                contrast.score < 60 ? 'Needs Enhancement' : 'Good Quality';
+            
+            document.getElementById('noise-bar').style.width = noise.score + '%';
+            document.getElementById('noise-value').textContent = Math.round(noise.score) + '%';
+            document.getElementById('noise-status').textContent = 
+                noise.score > 30 ? 'Needs Reduction' : 'Low Noise';
+            
+            document.getElementById('edge-bar').style.width = edge.score + '%';
+            document.getElementById('edge-value').textContent = Math.round(edge.score) + '%';
+            document.getElementById('edge-status').textContent = 
+                edge.score < 40 ? 'Needs Correction' : 'Good Quality';
+            
+            const highPriority = Object.values(recommendations).filter(r => r.priority === 3).length;
+            let assessment = '';
+            if (highPriority >= 2) {
+                assessment = '⚠️ Your image needs significant enhancement. Multiple filters are strongly recommended.';
+            } else if (highPriority === 1) {
+                assessment = '📊 Your image has some quality issues. Specific enhancements are recommended.';
+            } else {
+                assessment = '✅ Your image quality is good. Optional enhancements available for fine-tuning.';
+            }
+            document.getElementById('overall-assessment').textContent = assessment;
+            
+            displayRecommendation('contrast', recommendations.contrast);
+            displayRecommendation('noise', recommendations.noise);
+            displayRecommendation('edge', recommendations.edge);
+            
+            const order = [
+                { name: 'Noise Reduction', priority: recommendations.noise.priority },
+                { name: 'Contrast Enhancement', priority: recommendations.contrast.priority },
+                { name: 'Edge Correction', priority: recommendations.edge.priority }
+            ].sort((a, b) => b.priority - a.priority);
+            
+            const orderList = document.getElementById('processing-order');
+            orderList.innerHTML = '';
+            order.forEach((item) => {
+                if (item.priority >= 2) {
+                    const li = document.createElement('li');
+                    li.className = 'font-semibold';
+                    li.textContent = `${item.name} (Priority: ${item.priority === 3 ? 'High' : 'Medium'})`;
+                    orderList.appendChild(li);
+                }
+            });
+            
+            if (orderList.children.length === 0) {
+                orderList.innerHTML = '<li class="text-gray-600">No critical enhancements needed. Your image quality is good!</li>';
+            }
+        }
+
+        function displayRecommendation(type, rec) {
+            const badge = document.getElementById(`${type}-badge`);
+            const reason = document.getElementById(`${type}-reason`);
+            const button = document.getElementById(`apply-${type}`);
+            
+            reason.textContent = rec.reason;
+            
+            if (rec.priority === 3) {
+                badge.textContent = `${rec.confidence}% - Highly Recommended`;
+                badge.className = 'badge badge-high';
+                button.classList.remove('hidden');
+            } else if (rec.priority === 2) {
+                badge.textContent = `${rec.confidence}% - Recommended`;
+                badge.className = 'badge badge-medium';
+                button.classList.remove('hidden');
+            } else {
+                badge.textContent = `${rec.confidence}% - Optional`;
+                badge.className = 'badge badge-low';
+                button.classList.add('hidden');
+            }
+        }
+
+        document.getElementById('apply-contrast').addEventListener('click', () => {
+            window.location.href = '.vscode/fuzzy_logic_image_contrast_enhancer.html';
+        });
+        
+        document.getElementById('apply-noise').addEventListener('click', () => {
+            window.location.href = 'fuzzy_logic_noise_reducer.html';
+        });
+        
+        document.getElementById('apply-edge').addEventListener('click', () => {
+            window.location.href = 'fuzzy_logic_edge_corrector.html';
+        });
+    </script>
+</body>
+</html>

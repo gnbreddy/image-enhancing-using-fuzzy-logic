@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Auto Enhancer - Advanced Vision Analysis</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✨</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        canvas {
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            max-width: 100%;
+            height: auto;
+            background: white;
+        }
+        .progress-step {
+            transition: all 0.3s ease;
+        }
+        .progress-step.active {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            transform: scale(1.05);
+        }
+        .progress-step.completed {
+            background: #10b981;
+            color: white;
+        }
+        .ai-instruction {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 0.5rem 0;
+            animation: slideIn 0.5s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .typing-indicator {
+            display: inline-block;
+        }
+        .typing-indicator span {
+            animation: blink 1.4s infinite;
+            animation-fill-mode: both;
+        }
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        @keyframes blink {
+            0%, 80%, 100% { opacity: 0; }
+            40% { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="max-w-7xl w-full">
+        <div class="bg-white p-8 rounded-2xl shadow-xl">
+            <div class="flex items-center justify-between mb-6">
+                <button onclick="window.location.href='index.html'" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
+                    ← Back to Home
+                </button>
+                <h1 class="text-3xl font-bold text-gray-800">✨ AI Auto Enhancer (Advanced)</h1>
+                <div class="w-32"></div>
+            </div>
+
+            <p class="text-center text-gray-600 mb-6">
+                Upload an image and let AI Vision analyze it to provide intelligent enhancement instructions
+            </p>
+
+            <!-- API Key Section -->
+            <div id="api-key-section" class="mb-6 bg-blue-50 p-6 rounded-xl">
+                <h3 class="font-bold text-gray-800 mb-3">🔑 AI Vision API Configuration</h3>
+                <p class="text-sm text-gray-600 mb-4">
+                    Enter your OpenAI API key to enable advanced AI vision analysis. 
+                    <a href="https://platform.openai.com/api-keys" target="_blank" class="text-blue-600 hover:underline">Get API Key →</a>
+                </p>
+                <div class="flex gap-4">
+                    <input type="password" id="api-key-input" placeholder="sk-..." class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button id="save-api-key" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors">
+                        Save Key
+                    </button>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">
+                    ⚠️ Your API key is stored locally in your browser and never sent to our servers.
+                </p>
+            </div>
+
+            <!-- Upload Section -->
+            <div class="flex flex-col items-center mb-6">
+                <label for="image-upload" class="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-semibold py-3 px-8 rounded-lg cursor-pointer transition-all duration-300 shadow-lg">
+                    📤 Upload Image for AI Analysis
+                </label>
+                <input type="file" id="image-upload" accept="image/*" class="hidden">
+                <p id="file-name" class="mt-2 text-gray-600 text-sm"></p>
+            </div>
+
+            <!-- AI Analysis Section -->
+            <div id="ai-analysis-section" class="hidden mb-8">
+                <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl">
+                    <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <span class="text-2xl">🤖</span>
+                        AI Vision Analysis
+                    </h3>
+                    <div id="ai-thinking" class="hidden">
+                        <p class="text-gray-600">
+                            AI is analyzing your image
+                            <span class="typing-indicator">
+                                <span>.</span><span>.</span><span>.</span>
+                            </span>
+                        </p>
+                    </div>
+                    <div id="ai-recommendations" class="space-y-3"></div>
+                </div>
+            </div>
+
+            <!-- Enhancement Progress -->
+            <div id="progress-section" class="hidden mb-8">
+                <h3 class="font-bold text-gray-800 mb-4 text-center">🔄 AI-Guided Enhancement Pipeline</h3>
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div id="step-0" class="progress-step bg-gray-200 p-4 rounded-lg text-center">
+                        <div class="text-3xl mb-2">🤖</div>
+                        <p class="font-semibold text-sm">AI Analysis</p>
+                    </div>
+                    <div id="step-1" class="progress-step bg-gray-200 p-4 rounded-lg text-center">
+                        <div class="text-3xl mb-2">🔍</div>
+                        <p class="font-semibold text-sm">Analyzing</p>
+                    </div>
+                    <div id="step-2" class="progress-step bg-gray-200 p-4 rounded-lg text-center">
+                        <div class="text-3xl mb-2">🔧</div>
+                        <p class="font-semibold text-sm">Processing</p>
+                    </div>
+                    <div id="step-3" class="progress-step bg-gray-200 p-4 rounded-lg text-center">
+                        <div class="text-3xl mb-2">🖼️</div>
+                        <p class="font-semibold text-sm">Enhancing</p>
+                    </div>
+                    <div id="step-4" class="progress-step bg-gray-200 p-4 rounded-lg text-center">
+                        <div class="text-3xl mb-2">✅</div>
+                        <p class="font-semibold text-sm">Complete</p>
+                    </div>
+                </div>
+                <div class="mt-4 text-center">
+                    <p id="progress-text" class="text-gray-600 font-semibold"></p>
+                </div>
+            </div>
+
+            <!-- Image Comparison -->
+            <div id="comparison-section" class="hidden">
+                <div class="grid md:grid-cols-2 gap-8 mb-6">
+                    <div class="text-center">
+                        <h2 class="text-xl font-semibold mb-3">Original Image</h2>
+                        <canvas id="original-canvas"></canvas>
+                    </div>
+                    <div class="text-center">
+                        <h2 class="text-xl font-semibold mb-3">AI Enhanced Image</h2>
+                        <canvas id="enhanced-canvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- AI Enhancement Report -->
+                <div class="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-xl mb-6">
+                    <h3 class="font-bold text-gray-800 mb-3">📊 AI Enhancement Report</h3>
+                    <div id="enhancement-report" class="space-y-2 text-gray-700"></div>
+                </div>
+
+                <!-- Download Button -->
+                <div class="text-center">
+                    <button id="download-btn" class="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300 shadow-lg">
+                        📥 Download AI-Enhanced Image
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY_STORAGE = 'openai_api_key';
+        let apiKey = localStorage.getItem(API_KEY_STORAGE) || '';
+        
+        const imageUpload = document.getElementById('image-upload');
+        const fileNameDisplay = document.getElementById('file-name');
+        const apiKeyInput = document.getElementById('api-key-input');
+        const saveApiKeyBtn = document.getElementById('save-api-key');
+        const aiAnalysisSection = document.getElementById('ai-analysis-section');
+        const aiThinking = document.getElementById('ai-thinking');
+        const aiRecommendations = document.getElementById('ai-recommendations');
+        const progressSection = document.getElementById('progress-section');
+        const comparisonSection = document.getElementById('comparison-section');
+        const progressText = document.getElementById('progress-text');
+        const originalCanvas = document.getElementById('original-canvas');
+        const enhancedCanvas = document.getElementById('enhanced-canvas');
+        const originalCtx = originalCanvas.getContext('2d');
+        const enhancedCtx = enhancedCanvas.getContext('2d');
+        
+        let originalImage = null;
+        let aiInstructions = null;
+
+        // Load saved API key
+        if (apiKey) {
+            apiKeyInput.value = apiKey;
+        }
+
+        // Save API key
+        saveApiKeyBtn.addEventListener('click', () => {
+            apiKey = apiKeyInput.value.trim();
+            if (apiKey) {
+                localStorage.setItem(API_KEY_STORAGE, apiKey);
+                alert('✅ API Key saved successfully!');
+            } else {
+                alert('⚠️ Please enter a valid API key');
+            }
+        });
+
+        imageUpload.addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                if (!apiKey) {
+                    alert('⚠️ Please enter your OpenAI API key first!');
+                    return;
+                }
+
+                fileNameDisplay.textContent = file.name;
+                
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    originalImage = new Image();
+                    originalImage.onload = async () => {
+                        originalCanvas.width = originalImage.width;
+                        originalCanvas.height = originalImage.height;
+                        enhancedCanvas.width = originalImage.width;
+                        enhancedCanvas.height = originalImage.height;
+                        
+                        originalCtx.drawImage(originalImage, 0, 0);
+                        
+                        // Show AI analysis section
+                        aiAnalysisSection.classList.remove('hidden');
+                        aiThinking.classList.remove('hidden');
+                        aiRecommendations.innerHTML = '';
+                        
+                        // Get AI analysis
+                        await getAIAnalysis(e.target.result);
+                    };
+                    originalImage.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        async function getAIAnalysis(imageDataUrl) {
+            try {
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: 'gpt-4o',
+                        messages: [
+                            {
+                                role: 'user',
+                                content: [
+                                    {
+                                        type: 'text',
+                                        text: `Analyze this image for quality issues and provide specific enhancement recommendations. 
+                                        
+Please evaluate:
+1. Contrast levels (is it too dark, too bright, or well-balanced?)
+2. Noise levels (is there visible noise or grain?)
+3. Edge quality (are edges sharp or blurry?)
+4. Overall brightness and exposure
+5. Color balance and saturation
+
+Provide your response in this JSON format:
+{
+  "analysis": "Brief overall assessment",
+  "issues": ["issue1", "issue2", "issue3"],
+  "recommendations": {
+    "noise_reduction": {"apply": true/false, "strength": 0-100, "reason": "why"},
+    "contrast_enhancement": {"apply": true/false, "strength": 0-100, "reason": "why"},
+    "edge_correction": {"apply": true/false, "strength": 0-100, "reason": "why"},
+    "brightness_adjustment": {"apply": true/false, "adjustment": -50 to 50, "reason": "why"}
+  },
+  "processing_order": ["step1", "step2", "step3"],
+  "expected_improvement": "What improvements to expect"
+}`
+                                    },
+                                    {
+                                        type: 'image_url',
+                                        image_url: {
+                                            url: imageDataUrl
+                                        }
+                                    }
+                                ]
+                            }
+                        ],
+                        max_tokens: 1000
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                const aiResponse = data.choices[0].message.content;
+                
+                // Parse AI response
+                const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    aiInstructions = JSON.parse(jsonMatch[0]);
+                    displayAIRecommendations(aiInstructions);
+                } else {
+                    throw new Error('Could not parse AI response');
+                }
+
+            } catch (error) {
+                console.error('AI Analysis Error:', error);
+                aiThinking.classList.add('hidden');
+                aiRecommendations.innerHTML = `
+                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                        <p class="font-bold">Error: ${error.message}</p>
+                        <p class="text-sm mt-2">Please check your API key and try again.</p>
+                        <p class="text-sm">Falling back to standard analysis...</p>
+                    </div>
+                `;
+                
+                // Fallback to standard analysis
+                setTimeout(() => {
+                    startStandardEnhancement();
+                }, 2000);
+            }
+        }
+
+        function displayAIRecommendations(instructions) {
+            aiThinking.classList.add('hidden');
+            
+            let html = `
+                <div class="ai-instruction">
+                    <p class="font-bold mb-2">📋 AI Analysis:</p>
+                    <p>${instructions.analysis}</p>
+                </div>
+            `;
+
+            if (instructions.issues && instructions.issues.length > 0) {
+                html += `
+                    <div class="ai-instruction">
+                        <p class="font-bold mb-2">⚠️ Detected Issues:</p>
+                        <ul class="list-disc list-inside space-y-1">
+                            ${instructions.issues.map(issue => `<li>${issue}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            html += `
+                <div class="ai-instruction">
+                    <p class="font-bold mb-2">🎯 AI Recommendations:</p>
+                    <ul class="space-y-2">
+            `;
+
+            const recs = instructions.recommendations;
+            if (recs.noise_reduction?.apply) {
+                html += `<li>✓ Noise Reduction (${recs.noise_reduction.strength}%): ${recs.noise_reduction.reason}</li>`;
+            }
+            if (recs.contrast_enhancement?.apply) {
+                html += `<li>✓ Contrast Enhancement (${recs.contrast_enhancement.strength}%): ${recs.contrast_enhancement.reason}</li>`;
+            }
+            if (recs.edge_correction?.apply) {
+                html += `<li>✓ Edge Correction (${recs.edge_correction.strength}%): ${recs.edge_correction.reason}</li>`;
+            }
+            if (recs.brightness_adjustment?.apply) {
+                html += `<li>✓ Brightness Adjustment (${recs.brightness_adjustment.adjustment > 0 ? '+' : ''}${recs.brightness_adjustment.adjustment}): ${recs.brightness_adjustment.reason}</li>`;
+            }
+
+            html += `
+                    </ul>
+                </div>
+                <div class="ai-instruction">
+                    <p class="font-bold mb-2">💡 Expected Result:</p>
+                    <p>${instructions.expected_improvement}</p>
+                </div>
+                <div class="text-center mt-4">
+                    <button id="start-enhancement" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-lg transition-colors shadow-lg">
+                        🚀 Start AI-Guided Enhancement
+                    </button>
+                </div>
+            `;
+
+            aiRecommendations.innerHTML = html;
+
+            document.getElementById('start-enhancement').addEventListener('click', () => {
+                startAIGuidedEnhancement();
+            });
+        }
+
+        async function startAIGuidedEnhancement() {
+            aiAnalysisSection.classList.add('hidden');
+            progressSection.classList.remove('hidden');
+            comparisonSection.classList.add('hidden');
+
+            // Step 0: AI Analysis Complete
+            updateProgress(0, 'AI analysis complete, starting enhancement...');
+            await sleep(500);
+
+            // Step 1: Analyze
+            updateProgress(1, 'Analyzing image metrics...');
+            await sleep(800);
+            const imageData = originalCtx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
+            let processedData = imageData;
+
+            // Step 2: Apply AI-recommended enhancements
+            updateProgress(2, 'Applying AI-recommended filters...');
+            await sleep(1000);
+
+            const recs = aiInstructions.recommendations;
+
+            // Apply in AI-recommended order
+            if (recs.noise_reduction?.apply) {
+                processedData = applyNoiseReduction(processedData, recs.noise_reduction.strength);
+            }
+
+            if (recs.brightness_adjustment?.apply) {
+                processedData = applyBrightnessAdjustment(processedData, recs.brightness_adjustment.adjustment);
+            }
+
+            // Step 3: Continue enhancement
+            updateProgress(3, 'Enhancing contrast and edges...');
+            await sleep(1000);
+
+            if (recs.contrast_enhancement?.apply) {
+                processedData = applyContrastEnhancement(processedData, recs.contrast_enhancement.strength);
+            }
+
+            if (recs.edge_correction?.apply) {
+                processedData = applyEdgeCorrection(processedData, recs.edge_correction.strength);
+            }
+
+            // Step 4: Complete
+            updateProgress(4, 'Enhancement complete!');
+            await sleep(500);
+
+            enhancedCtx.putImageData(processedData, 0, 0);
+            displayEnhancementReport();
+
+            progressSection.classList.add('hidden');
+            comparisonSection.classList.remove('hidden');
+        }
+
+        function startStandardEnhancement() {
+            // Fallback to standard enhancement without AI
+            aiInstructions = {
+                recommendations: {
+                    noise_reduction: { apply: true, strength: 50 },
+                    contrast_enhancement: { apply: true, strength: 70 },
+                    edge_correction: { apply: true, strength: 60 },
+                    brightness_adjustment: { apply: false }
+                }
+            };
+            startAIGuidedEnhancement();
+        }
+
+        function updateProgress(step, text) {
+            for (let i = 0; i <= 4; i++) {
+                const stepEl = document.getElementById(`step-${i}`);
+                if (i < step) {
+                    stepEl.className = 'progress-step completed p-4 rounded-lg text-center';
+                } else if (i === step) {
+                    stepEl.className = 'progress-step active p-4 rounded-lg text-center';
+                } else {
+                    stepEl.className = 'progress-step bg-gray-200 p-4 rounded-lg text-center';
+                }
+            }
+            progressText.textContent = text;
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function applyNoiseReduction(imageData, strength) {
+            const data = new Uint8ClampedArray(imageData.data);
+            const width = imageData.width;
+            const height = imageData.height;
+            const result = new Uint8ClampedArray(data);
+            const factor = strength / 100;
+
+            for (let y = 1; y < height - 1; y++) {
+                for (let x = 1; x < width - 1; x++) {
+                    const idx = (y * width + x) * 4;
+                    
+                    let r = 0, g = 0, b = 0, count = 0;
+                    for (let dy = -1; dy <= 1; dy++) {
+                        for (let dx = -1; dx <= 1; dx++) {
+                            const nIdx = ((y+dy) * width + (x+dx)) * 4;
+                            r += data[nIdx];
+                            g += data[nIdx+1];
+                            b += data[nIdx+2];
+                            count++;
+                        }
+                    }
+                    
+                    result[idx] = data[idx] * (1 - factor * 0.7) + (r / count) * (factor * 0.7);
+                    result[idx+1] = data[idx+1] * (1 - factor * 0.7) + (g / count) * (factor * 0.7);
+                    result[idx+2] = data[idx+2] * (1 - factor * 0.7) + (b / count) * (factor * 0.7);
+                }
+            }
+            
+            return new ImageData(result, width, height);
+        }
+
+        function applyBrightnessAdjustment(imageData, adjustment) {
+            const data = new Uint8ClampedArray(imageData.data);
+            const result = new Uint8ClampedArray(data);
+            const factor = adjustment * 2.55; // Convert -50 to 50 range to -127.5 to 127.5
+
+            for (let i = 0; i < data.length; i += 4) {
+                result[i] = Math.min(255, Math.max(0, data[i] + factor));
+                result[i+1] = Math.min(255, Math.max(0, data[i+1] + factor));
+                result[i+2] = Math.min(255, Math.max(0, data[i+2] + factor));
+            }
+
+            return new ImageData(result, imageData.width, imageData.height);
+        }
+
+        function applyContrastEnhancement(imageData, strength) {
+            const data = new Uint8ClampedArray(imageData.data);
+            const result = new Uint8ClampedArray(data);
+            const factor = strength / 100;
+
+            for (let i = 0; i < data.length; i += 4) {
+                const gray = (data[i] + data[i+1] + data[i+2]) / 3;
+                
+                const darkMembership = Math.max(0, Math.min(1, (127 - gray) / 127));
+                const mediumMembership = gray < 85 ? 0 : gray < 127 ? (gray - 85) / 42 : gray < 170 ? (170 - gray) / 43 : 0;
+                const brightMembership = Math.max(0, Math.min(1, (gray - 127) / 128));
+                
+                const darkOut = 25, mediumOut = 140, brightOut = 230;
+                const total = darkMembership + mediumMembership + brightMembership;
+                const enhancedGray = total > 0 ? 
+                    (darkMembership * darkOut + mediumMembership * mediumOut + brightMembership * brightOut) / total : gray;
+                
+                const ratio = (enhancedGray / (gray + 0.001) - 1) * factor + 1;
+                result[i] = Math.min(255, Math.max(0, data[i] * ratio));
+                result[i+1] = Math.min(255, Math.max(0, data[i+1] * ratio));
+                result[i+2] = Math.min(255, Math.max(0, data[i+2] * ratio));
+            }
+            
+            return new ImageData(result, imageData.width, imageData.height);
+        }
+
+        function applyEdgeCorrection(imageData, strength) {
+            const data = new Uint8ClampedArray(imageData.data);
+            const width = imageData.width;
+            const height = imageData.height;
+            const result = new Uint8ClampedArray(data);
+            const factor = strength / 100;
+
+            const gray = new Array(width * height);
+            for (let i = 0; i < data.length; i += 4) {
+                gray[i / 4] = (data[i] + data[i+1] + data[i+2]) / 3;
+            }
+
+            for (let y = 2; y < height - 2; y++) {
+                for (let x = 2; x < width - 2; x++) {
+                    const idx = y * width + x;
+                    const pixelIdx = idx * 4;
+                    
+                    const gx = (-gray[(y-1)*width+(x-1)] + gray[(y-1)*width+(x+1)] +
+                               -2*gray[y*width+(x-1)] + 2*gray[y*width+(x+1)] +
+                               -gray[(y+1)*width+(x-1)] + gray[(y+1)*width+(x+1)]);
+                    const gy = (-gray[(y-1)*width+(x-1)] - 2*gray[(y-1)*width+x] - gray[(y-1)*width+(x+1)] +
+                               gray[(y+1)*width+(x-1)] + 2*gray[(y+1)*width+x] + gray[(y+1)*width+(x+1)]);
+                    const magnitude = Math.sqrt(gx*gx + gy*gy);
+                    
+                    if (magnitude > 20 && magnitude < 60) {
+                        const sharpen = 0.3 * factor;
+                        for (let c = 0; c < 3; c++) {
+                            const center = data[pixelIdx + c];
+                            let sum = 0;
+                            for (let dy = -1; dy <= 1; dy++) {
+                                for (let dx = -1; dx <= 1; dx++) {
+                                    if (dx === 0 && dy === 0) continue;
+                                    sum += data[((y+dy)*width+(x+dx))*4 + c];
+                                }
+                            }
+                            const avg = sum / 8;
+                            result[pixelIdx + c] = Math.min(255, Math.max(0, center + (center - avg) * sharpen));
+                        }
+                    }
+                }
+            }
+            
+            return new ImageData(result, width, height);
+        }
+
+        function displayEnhancementReport() {
+            const report = document.getElementById('enhancement-report');
+            let html = '<p class="font-bold mb-3">✅ AI-Guided Enhancements Applied:</p><ul class="space-y-2">';
+
+            const recs = aiInstructions.recommendations;
+            if (recs.noise_reduction?.apply) {
+                html += `<li>✓ Noise Reduction (${recs.noise_reduction.strength}% strength)</li>`;
+            }
+            if (recs.brightness_adjustment?.apply) {
+                html += `<li>✓ Brightness Adjusted (${recs.brightness_adjustment.adjustment > 0 ? '+' : ''}${recs.brightness_adjustment.adjustment})</li>`;
+            }
+            if (recs.contrast_enhancement?.apply) {
+                html += `<li>✓ Contrast Enhanced (${recs.contrast_enhancement.strength}% strength)</li>`;
+            }
+            if (recs.edge_correction?.apply) {
+                html += `<li>✓ Edges Corrected (${recs.edge_correction.strength}% strength)</li>`;
+            }
+
+            html += '</ul>';
+            if (aiInstructions.expected_improvement) {
+                html += `<p class="mt-4 font-semibold">📈 Result: ${aiInstructions.expected_improvement}</p>`;
+            }
+
+            report.innerHTML = html;
+        }
+
+        document.getElementById('download-btn').addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'ai_enhanced_image.png';
+            link.href = enhancedCanvas.toDataURL();
+            link.click();
+        });
+    </script>
+</body>
+</html>

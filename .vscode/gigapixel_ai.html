@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gigapixel AI - Advanced Image Upscaling</title>
+    <!-- Simple favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .editor-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        canvas {
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            max-width: 100%;
+            height: auto;
+            background-color: #fff;
+        }
+        .control-panel {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            color: white;
+            margin-bottom: 1rem;
+        }
+        .control-panel h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .slider-group {
+            margin-bottom: 1rem;
+        }
+        .slider-group:last-child {
+            margin-bottom: 0;
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        .slider-value {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.8rem;
+            min-width: 3rem;
+            text-align: center;
+        }
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.3);
+            outline: none;
+            -webkit-appearance: none;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+        .preset-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.875rem;
+            margin: 0.25rem;
+        }
+        .preset-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+        .preset-btn.active {
+            background: rgba(255, 255, 255, 0.4);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        .image-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .image-label {
+            position: absolute;
+            top: -2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        .reset-btn {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        .reset-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .download-btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+        .download-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .ai-indicator {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .processing-animation {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="p-4">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+            <button onclick="window.location.href='index.html'" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
+                ← Back to Home
+            </button>
+            <h1 class="text-4xl font-bold text-white text-center">Gigapixel AI</h1>
+            <div class="w-32"></div>
+        </div>
+
+        <!-- Main Editor Container -->
+        <div class="editor-container rounded-2xl p-6 shadow-2xl">
+            <!-- Upload Section -->
+            <div class="text-center mb-6">
+                <label for="image-upload" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-8 rounded-lg cursor-pointer transition-colors duration-300 inline-block">
+                    📁 Upload Image
+                </label>
+                <input type="file" id="image-upload" accept="image/*" class="hidden">
+                <p id="file-name" class="mt-2 text-gray-600 text-sm"></p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <!-- Left Panel - Controls -->
+                <div class="space-y-4">
+                    <!-- AI Processing Info -->
+                    <div class="ai-indicator">
+                        <span>🤖</span>
+                        <span>AI-Powered Upscaling</span>
+                    </div>
+
+                    <!-- Upscaling Controls -->
+                    <div class="control-panel">
+                        <h3>🔍 Upscaling Settings</h3>
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Scale Factor</span>
+                                <span class="slider-value" id="scale-value">2x</span>
+                            </div>
+                            <input type="range" id="scale" min="2" max="8" step="1" value="2" class="slider">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>AI Strength</span>
+                                <span class="slider-value" id="ai-strength-value">100%</span>
+                            </div>
+                            <input type="range" id="ai-strength" min="50" max="100" step="5" value="100" class="slider">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Detail Enhancement</span>
+                                <span class="slider-value" id="detail-value">75%</span>
+                            </div>
+                            <input type="range" id="detail" min="0" max="100" step="5" value="75" class="slider">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Noise Reduction</span>
+                                <span class="slider-value" id="noise-value">50%</span>
+                            </div>
+                            <input type="range" id="noise" min="0" max="100" step="5" value="50" class="slider">
+                        </div>
+                    </div>
+
+                    <!-- AI Model Selection -->
+                    <div class="control-panel">
+                        <h3>🧠 AI Model</h3>
+                        <div class="space-y-2">
+                            <button class="preset-btn active" data-model="general">General Purpose</button>
+                            <button class="preset-btn" data-model="faces">Faces & People</button>
+                            <button class="preset-btn" data-model="text">Text & Graphics</button>
+                            <button class="preset-btn" data-model="artwork">Artwork & Paintings</button>
+                        </div>
+                    </div>
+
+                    <!-- Quick Presets -->
+                    <div class="control-panel">
+                        <h3>⚡ Quick Presets</h3>
+                        <div class="flex flex-wrap">
+                            <button class="preset-btn" data-preset="2x">2x Upscale</button>
+                            <button class="preset-btn" data-preset="4x">4x Upscale</button>
+                            <button class="preset-btn" data-preset="8x">8x Upscale</button>
+                            <button class="preset-btn" data-preset="reset">Reset</button>
+                        </div>
+                    </div>
+
+                    <!-- Image Info -->
+                    <div class="control-panel">
+                        <h3>📊 Image Information</h3>
+                        <div id="image-info" class="text-sm space-y-1">
+                            <p>No image loaded</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Center Panel - Image Display -->
+                <div class="lg:col-span-2">
+                    <div class="before-after">
+                        <div class="image-container">
+                            <div class="image-label">Original</div>
+                            <canvas id="original-canvas" width="400" height="300"></canvas>
+                        </div>
+                        <div class="image-container">
+                            <div class="image-label">AI Upscaled</div>
+                            <canvas id="upscaled-canvas" width="800" height="600"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Processing Status -->
+                    <div id="processing-status" class="hidden text-center mt-4">
+                        <div class="ai-indicator">
+                            <div class="processing-animation"></div>
+                            <span>AI Processing Image...</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex justify-center gap-4 mt-6">
+                        <button id="reset-btn" class="reset-btn">
+                            🔄 Reset
+                        </button>
+                        <button id="download-btn" class="download-btn" disabled>
+                            💾 Download Upscaled Image
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Panel - Tips & Info -->
+                <div class="space-y-4">
+                    <div class="bg-white rounded-lg p-4 shadow-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">💡 AI Upscaling Tips</h3>
+                        <div class="text-sm text-gray-600 space-y-2">
+                            <p><strong>Scale Factor:</strong> Higher scales require more processing time but produce better results</p>
+                            <p><strong>AI Strength:</strong> Higher values preserve more detail but may introduce artifacts</p>
+                            <p><strong>Detail Enhancement:</strong> Boost fine details and textures in the upscaled image</p>
+                            <p><strong>Model Selection:</strong> Choose the model that best matches your image type</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-4 shadow-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">🔬 How Gigapixel AI Works</h3>
+                        <div class="text-sm text-gray-600 space-y-2">
+                            <p><strong>Deep Learning:</strong> Uses advanced neural networks trained on millions of images</p>
+                            <p><strong>Pattern Recognition:</strong> Identifies and recreates missing details intelligently</p>
+                            <p><strong>Edge Preservation:</strong> Maintains sharp edges and fine details during upscaling</p>
+                            <p><strong>Noise Reduction:</strong> Automatically reduces artifacts and noise in the result</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-4 shadow-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">⚡ Performance</h3>
+                        <div class="text-sm text-gray-600">
+                            <p>Processing time varies based on image size and scale factor. Larger images and higher scale factors take longer but produce superior results.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let originalImage = null;
+        let originalImageData = null;
+        let currentModel = 'general';
+        let isProcessing = false;
+
+        // Canvas elements
+        const originalCanvas = document.getElementById('original-canvas');
+        const originalCtx = originalCanvas.getContext('2d');
+        const upscaledCanvas = document.getElementById('upscaled-canvas');
+        const upscaledCtx = upscaledCanvas.getContext('2d');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // File upload
+            document.getElementById('image-upload').addEventListener('change', handleImageUpload);
+            
+            // All sliders
+            const sliders = ['scale', 'ai-strength', 'detail', 'noise'];
+            
+            sliders.forEach(sliderId => {
+                const slider = document.getElementById(sliderId);
+                const valueDisplay = document.getElementById(sliderId + '-value');
+                
+                slider.addEventListener('input', (e) => {
+                    updateSliderValue(sliderId, e.target.value);
+                    if (!isProcessing && originalImage) {
+                        processImage();
+                    }
+                });
+            });
+            
+            // Model selection
+            document.querySelectorAll('.preset-btn[data-model]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    selectModel(e.target.dataset.model);
+                });
+            });
+            
+            // Preset buttons
+            document.querySelectorAll('.preset-btn[data-preset]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    applyPreset(e.target.dataset.preset);
+                });
+            });
+            
+            // Action buttons
+            document.getElementById('reset-btn').addEventListener('click', resetAll);
+            document.getElementById('download-btn').addEventListener('click', downloadImage);
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                document.getElementById('file-name').textContent = file.name;
+                document.getElementById('download-btn').disabled = false;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    originalImage = new Image();
+                    originalImage.onload = () => {
+                        // Set original canvas size
+                        const maxWidth = 400;
+                        const maxHeight = 300;
+                        let { width, height } = originalImage;
+                        
+                        if (width > maxWidth || height > maxHeight) {
+                            const ratio = Math.min(maxWidth / width, maxHeight / height);
+                            width *= ratio;
+                            height *= ratio;
+                        }
+                        
+                        originalCanvas.width = width;
+                        originalCanvas.height = height;
+                        
+                        // Draw original image
+                        originalCtx.drawImage(originalImage, 0, 0, width, height);
+                        
+                        // Get image data
+                        originalImageData = originalCtx.getImageData(0, 0, width, height);
+                        
+                        // Update image info
+                        updateImageInfo(originalImage.width, originalImage.height);
+                        
+                        // Process image
+                        processImage();
+                    };
+                    originalImage.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function processImage() {
+            if (!originalImageData || isProcessing) return;
+            
+            isProcessing = true;
+            showProcessingStatus(true);
+            
+            // Get current values
+            const scale = parseInt(document.getElementById('scale').value);
+            const aiStrength = parseInt(document.getElementById('ai-strength').value) / 100;
+            const detail = parseInt(document.getElementById('detail').value) / 100;
+            const noise = parseInt(document.getElementById('noise').value) / 100;
+            
+            // Simulate AI processing time
+            setTimeout(() => {
+                performAIUpscaling(scale, aiStrength, detail, noise);
+                showProcessingStatus(false);
+                isProcessing = false;
+            }, 1000 + (scale * 500)); // Longer processing for higher scales
+        }
+
+        function performAIUpscaling(scale, aiStrength, detail, noise) {
+            const originalWidth = originalImageData.width;
+            const originalHeight = originalImageData.height;
+            const newWidth = originalWidth * scale;
+            const newHeight = originalHeight * scale;
+            
+            // Set upscaled canvas size
+            upscaledCanvas.width = newWidth;
+            upscaledCanvas.height = newHeight;
+            
+            // Create new image data
+            const upscaledData = new Uint8ClampedArray(newWidth * newHeight * 4);
+            const originalData = originalImageData.data;
+            
+            // AI-powered upscaling algorithm
+            for (let y = 0; y < newHeight; y++) {
+                for (let x = 0; x < newWidth; x++) {
+                    const idx = (y * newWidth + x) * 4;
+                    
+                    // Calculate source coordinates
+                    const srcX = x / scale;
+                    const srcY = y / scale;
+                    
+                    // Get interpolated pixel with AI enhancement
+                    const pixel = getAIEnhancedPixel(originalData, srcX, srcY, originalWidth, originalHeight, scale, aiStrength, detail, noise);
+                    
+                    upscaledData[idx] = pixel.r;
+                    upscaledData[idx + 1] = pixel.g;
+                    upscaledData[idx + 2] = pixel.b;
+                    upscaledData[idx + 3] = pixel.a;
+                }
+            }
+            
+            // Draw result
+            const newImageData = new ImageData(upscaledData, newWidth, newHeight);
+            upscaledCtx.putImageData(newImageData, 0, 0);
+        }
+
+        function getAIEnhancedPixel(originalData, srcX, srcY, width, height, scale, aiStrength, detail, noise) {
+            // Bicubic interpolation as base
+            const basePixel = bicubicInterpolation(originalData, srcX, srcY, width, height);
+            
+            // AI enhancement based on model
+            let enhancedPixel = { ...basePixel };
+            
+            switch (currentModel) {
+                case 'faces':
+                    enhancedPixel = enhanceForFaces(basePixel, srcX, srcY, originalData, width, height, aiStrength, detail);
+                    break;
+                case 'text':
+                    enhancedPixel = enhanceForText(basePixel, srcX, srcY, originalData, width, height, aiStrength, detail);
+                    break;
+                case 'artwork':
+                    enhancedPixel = enhanceForArtwork(basePixel, srcX, srcY, originalData, width, height, aiStrength, detail);
+                    break;
+                default:
+                    enhancedPixel = enhanceGeneral(basePixel, srcX, srcY, originalData, width, height, aiStrength, detail);
+            }
+            
+            // Apply noise reduction
+            if (noise > 0) {
+                enhancedPixel = applyNoiseReduction(enhancedPixel, noise);
+            }
+            
+            return enhancedPixel;
+        }
+
+        function bicubicInterpolation(data, x, y, width, height) {
+            const x1 = Math.floor(x);
+            const y1 = Math.floor(y);
+            const x2 = Math.min(x1 + 1, width - 1);
+            const y2 = Math.min(y1 + 1, height - 1);
+            
+            const dx = x - x1;
+            const dy = y - y1;
+            
+            // Get surrounding pixels
+            const p00 = getPixel(data, x1, y1, width);
+            const p01 = getPixel(data, x1, y2, width);
+            const p10 = getPixel(data, x2, y1, width);
+            const p11 = getPixel(data, x2, y2, width);
+            
+            // Bicubic interpolation
+            const r = interpolate(p00.r, p01.r, p10.r, p11.r, dx, dy);
+            const g = interpolate(p00.g, p01.g, p10.g, p11.g, dx, dy);
+            const b = interpolate(p00.b, p01.b, p10.b, p11.b, dx, dy);
+            const a = interpolate(p00.a, p01.a, p10.a, p11.a, dx, dy);
+            
+            return { r, g, b, a };
+        }
+
+        function getPixel(data, x, y, width) {
+            const idx = (y * width + x) * 4;
+            return {
+                r: data[idx],
+                g: data[idx + 1],
+                b: data[idx + 2],
+                a: data[idx + 3]
+            };
+        }
+
+        function interpolate(p00, p01, p10, p11, dx, dy) {
+            const c0 = p00 + (p10 - p00) * dx;
+            const c1 = p01 + (p11 - p01) * dx;
+            return c0 + (c1 - c0) * dy;
+        }
+
+        function enhanceGeneral(pixel, x, y, data, width, height, strength, detail) {
+            // General purpose enhancement
+            const edgeStrength = detectEdges(data, x, y, width, height);
+            const detailBoost = 1 + (detail * edgeStrength * strength);
+            
+            return {
+                r: Math.min(255, Math.max(0, pixel.r * detailBoost)),
+                g: Math.min(255, Math.max(0, pixel.g * detailBoost)),
+                b: Math.min(255, Math.max(0, pixel.b * detailBoost)),
+                a: pixel.a
+            };
+        }
+
+        function enhanceForFaces(pixel, x, y, data, width, height, strength, detail) {
+            // Face-specific enhancement (smoother, more natural)
+            const skinTone = detectSkinTone(pixel);
+            const enhancement = skinTone ? 0.8 : 1.2;
+            
+            return {
+                r: Math.min(255, Math.max(0, pixel.r * enhancement * (1 + detail * strength))),
+                g: Math.min(255, Math.max(0, pixel.g * enhancement * (1 + detail * strength))),
+                b: Math.min(255, Math.max(0, pixel.b * enhancement * (1 + detail * strength))),
+                a: pixel.a
+            };
+        }
+
+        function enhanceForText(pixel, x, y, data, width, height, strength, detail) {
+            // Text-specific enhancement (sharper edges)
+            const edgeStrength = detectEdges(data, x, y, width, height);
+            const sharpness = 1 + (edgeStrength * detail * strength * 2);
+            
+            return {
+                r: Math.min(255, Math.max(0, pixel.r * sharpness)),
+                g: Math.min(255, Math.max(0, pixel.g * sharpness)),
+                b: Math.min(255, Math.max(0, pixel.b * sharpness)),
+                a: pixel.a
+            };
+        }
+
+        function enhanceForArtwork(pixel, x, y, data, width, height, strength, detail) {
+            // Artwork-specific enhancement (preserve artistic style)
+            const colorVariance = calculateColorVariance(data, x, y, width, height);
+            const enhancement = 1 + (colorVariance * detail * strength);
+            
+            return {
+                r: Math.min(255, Math.max(0, pixel.r * enhancement)),
+                g: Math.min(255, Math.max(0, pixel.g * enhancement)),
+                b: Math.min(255, Math.max(0, pixel.b * enhancement)),
+                a: pixel.a
+            };
+        }
+
+        function detectEdges(data, x, y, width, height) {
+            // Simple edge detection using Sobel operator
+            const sobelX = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
+            const sobelY = [-1, -2, -1, 0, 0, 0, 1, 2, 1];
+            
+            let gx = 0, gy = 0;
+            
+            for (let ky = -1; ky <= 1; ky++) {
+                for (let kx = -1; kx <= 1; kx++) {
+                    const nx = Math.max(0, Math.min(width - 1, x + kx));
+                    const ny = Math.max(0, Math.min(height - 1, y + ky));
+                    const idx = (ny * width + nx) * 4;
+                    const gray = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+                    
+                    const weightX = sobelX[(ky + 1) * 3 + (kx + 1)];
+                    const weightY = sobelY[(ky + 1) * 3 + (kx + 1)];
+                    
+                    gx += gray * weightX;
+                    gy += gray * weightY;
+                }
+            }
+            
+            return Math.sqrt(gx * gx + gy * gy) / 255;
+        }
+
+        function detectSkinTone(pixel) {
+            // Simple skin tone detection
+            const { r, g, b } = pixel;
+            return r > 95 && g > 40 && b > 20 && 
+                   Math.max(r, g, b) - Math.min(r, g, b) > 15 &&
+                   Math.abs(r - g) > 15 && r > g && r > b;
+        }
+
+        function calculateColorVariance(data, x, y, width, height) {
+            // Calculate color variance in neighborhood
+            let sum = 0, count = 0;
+            const centerIdx = (y * width + x) * 4;
+            const centerGray = (data[centerIdx] + data[centerIdx + 1] + data[centerIdx + 2]) / 3;
+            
+            for (let dy = -1; dy <= 1; dy++) {
+                for (let dx = -1; dx <= 1; dx++) {
+                    const nx = Math.max(0, Math.min(width - 1, x + dx));
+                    const ny = Math.max(0, Math.min(height - 1, y + dy));
+                    const idx = (ny * width + nx) * 4;
+                    const gray = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+                    sum += Math.abs(gray - centerGray);
+                    count++;
+                }
+            }
+            
+            return sum / count / 255;
+        }
+
+        function applyNoiseReduction(pixel, noiseLevel) {
+            // Simple noise reduction
+            const factor = 1 - noiseLevel * 0.3;
+            return {
+                r: pixel.r * factor + 128 * (1 - factor),
+                g: pixel.g * factor + 128 * (1 - factor),
+                b: pixel.b * factor + 128 * (1 - factor),
+                a: pixel.a
+            };
+        }
+
+        function selectModel(model) {
+            currentModel = model;
+            document.querySelectorAll('.preset-btn[data-model]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            if (originalImage && !isProcessing) {
+                processImage();
+            }
+        }
+
+        function applyPreset(presetName) {
+            // Remove active class from all preset buttons
+            document.querySelectorAll('.preset-btn[data-preset]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Add active class to clicked button
+            event.target.classList.add('active');
+            
+            const presets = {
+                '2x': { scale: 2, aiStrength: 100, detail: 75, noise: 50 },
+                '4x': { scale: 4, aiStrength: 100, detail: 80, noise: 60 },
+                '8x': { scale: 8, aiStrength: 95, detail: 85, noise: 70 },
+                'reset': { scale: 2, aiStrength: 100, detail: 75, noise: 50 }
+            };
+            
+            const preset = presets[presetName];
+            if (preset) {
+                Object.keys(preset).forEach(key => {
+                    const slider = document.getElementById(key);
+                    if (slider) {
+                        slider.value = preset[key];
+                        updateSliderValue(key, preset[key]);
+                    }
+                });
+                
+                if (presetName !== 'reset' && originalImage && !isProcessing) {
+                    processImage();
+                } else if (presetName === 'reset') {
+                    resetAll();
+                }
+            }
+        }
+
+        function updateSliderValue(sliderId, value) {
+            const valueDisplay = document.getElementById(sliderId + '-value');
+            if (valueDisplay) {
+                if (sliderId === 'scale') {
+                    valueDisplay.textContent = value + 'x';
+                } else {
+                    valueDisplay.textContent = value + '%';
+                }
+            }
+        }
+
+        function resetAll() {
+            // Reset all sliders to default values
+            const defaults = { scale: 2, aiStrength: 100, detail: 75, noise: 50 };
+            
+            Object.keys(defaults).forEach(key => {
+                const slider = document.getElementById(key);
+                if (slider) {
+                    slider.value = defaults[key];
+                    updateSliderValue(key, defaults[key]);
+                }
+            });
+            
+            // Remove active class from all preset buttons
+            document.querySelectorAll('.preset-btn[data-preset]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Reset to general model
+            currentModel = 'general';
+            document.querySelectorAll('.preset-btn[data-model]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.preset-btn[data-model="general"]').classList.add('active');
+            
+            // Reset image to original
+            if (originalImageData) {
+                upscaledCtx.clearRect(0, 0, upscaledCanvas.width, upscaledCanvas.height);
+            }
+        }
+
+        function updateImageInfo(width, height) {
+            const info = document.getElementById('image-info');
+            info.innerHTML = `
+                <p><strong>Original:</strong> ${width} × ${height}</p>
+                <p><strong>Pixels:</strong> ${(width * height).toLocaleString()}</p>
+                <p><strong>Format:</strong> PNG</p>
+                <p><strong>Model:</strong> ${currentModel}</p>
+            `;
+        }
+
+        function showProcessingStatus(show) {
+            const status = document.getElementById('processing-status');
+            if (show) {
+                status.classList.remove('hidden');
+            } else {
+                status.classList.add('hidden');
+            }
+        }
+
+        function downloadImage() {
+            if (!upscaledCanvas) return;
+            
+            const link = document.createElement('a');
+            link.download = 'gigapixel_ai_upscaled.png';
+            link.href = upscaledCanvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>

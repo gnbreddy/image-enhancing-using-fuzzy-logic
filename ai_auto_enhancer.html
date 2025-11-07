@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Auto Enhancer - Complete Image Enhancement</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✨</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        canvas {
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            max-width: 100%;
+            height: auto;
+            background: white;
+        }
+        .progress-step {
+            transition: all 0.3s ease;
+        }
+        .progress-step.active {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            transform: scale(1.05);
+        }
+        .progress-step.completed {
+            background: #10b981;
+            color: white;
+        }
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+        .shimmer {
+            animation: shimmer 2s infinite;
+            background: linear-gradient(to right, #f6f7f8 0%, #edeef1 20%, #f6f7f8 40%, #f6f7f8 100%);
+            background-size: 1000px 100%;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="max-w-7xl w-full">
+        <div class="bg-white p-8 rounded-2xl shadow-xl">
+            <div class="flex items-center justify-between mb-6">
+                <button onclick="window.location.href='index.html'" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
+                    ← Back to Home
+                </button>
+                <h1 class="text-3xl font-bold text-gray-800">✨ AI Auto Enhancer</h1>
+                <div class="w-32"></div>
+            </div>
+
+            <p class="text-center text-gray-600 mb-6">
+                Upload an image and let AI automatically apply all enhancement filters for optimal results
+            </p>
+
+            <!-- Upload Section -->
+            <div class="flex flex-col items-center mb-6">
+                <label for="image-upload" class="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-semibold py-3 px-8 rounded-lg cursor-pointer transition-all duration-300 shadow-lg">
+                    📤 Upload Image for Auto Enhancement
+                </label>
+                <input type="file" id="image-upload" accept="image/*" class="hidden">
+                <p id="file-name" class="mt-2 text-gray-600 text-sm"></p>
+            </div>
+
+            <!-- Enhancement Progress -->
+            <div id="progress-section" class="hidden mb-8">
+                <h3 class="font-bold text-gray-800 mb-4 text-center">🔄 Enhancement Pipeline</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div id="step-1" class="progress-step bg-gray-200 p-4 rounded-lg text-center">
+                        <div class="text-3xl mb-2">🔍</div>
+                        <p class="font-semibold text-sm">Analyzing</p>
+                    </div>
+                    <div id="step-2" class="progress-step bg-gray-200 p-4 rounded-lg text-center">
+                        <div class="text-3xl mb-2">🔧</div>
+                        <p class="font-semibold text-sm">Noise Reduction</p>
+                    </div>
+                    <div id="step-3" class="progress-step bg-gray-200 p-4 rounded-lg text-center">
+                        <div class="text-3xl mb-2">🖼️</div>
+                        <p class="font-semibold text-sm">Contrast</p>
+                    </div>
+                    <div id="step-4" class="progress-step bg-gray-200 p-4 rounded-lg text-center">
+                        <div class="text-3xl mb-2">✏️</div>
+                        <p class="font-semibold text-sm">Edge Correction</p>
+                    </div>
+                </div>
+                <div class="mt-4 text-center">
+                    <p id="progress-text" class="text-gray-600 font-semibold"></p>
+                </div>
+            </div>
+
+            <!-- Image Comparison -->
+            <div id="comparison-section" class="hidden">
+                <div class="grid md:grid-cols-2 gap-8 mb-6">
+                    <div class="text-center">
+                        <h2 class="text-xl font-semibold mb-3">Original Image</h2>
+                        <canvas id="original-canvas"></canvas>
+                        <div class="mt-3 bg-gray-100 p-3 rounded-lg">
+                            <p class="text-sm text-gray-600">Original Quality Metrics</p>
+                            <div class="grid grid-cols-3 gap-2 mt-2">
+                                <div>
+                                    <p class="text-xs text-gray-500">Contrast</p>
+                                    <p id="orig-contrast" class="font-bold text-gray-800">-</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Noise</p>
+                                    <p id="orig-noise" class="font-bold text-gray-800">-</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Edges</p>
+                                    <p id="orig-edges" class="font-bold text-gray-800">-</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <h2 class="text-xl font-semibold mb-3">AI Enhanced Image</h2>
+                        <canvas id="enhanced-canvas"></canvas>
+                        <div class="mt-3 bg-green-100 p-3 rounded-lg">
+                            <p class="text-sm text-green-700">Enhanced Quality Metrics</p>
+                            <div class="grid grid-cols-3 gap-2 mt-2">
+                                <div>
+                                    <p class="text-xs text-green-600">Contrast</p>
+                                    <p id="enh-contrast" class="font-bold text-green-800">-</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-green-600">Noise</p>
+                                    <p id="enh-noise" class="font-bold text-green-800">-</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-green-600">Edges</p>
+                                    <p id="enh-edges" class="font-bold text-green-800">-</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Enhancement Summary -->
+                <div class="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-xl mb-6">
+                    <h3 class="font-bold text-gray-800 mb-3">📊 Enhancement Summary</h3>
+                    <div id="summary-content" class="space-y-2 text-gray-700"></div>
+                </div>
+
+                <!-- Download Button -->
+                <div class="text-center">
+                    <button id="download-btn" class="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300 shadow-lg">
+                        📥 Download Enhanced Image
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const imageUpload = document.getElementById('image-upload');
+        const fileNameDisplay = document.getElementById('file-name');
+        const progressSection = document.getElementById('progress-section');
+        const comparisonSection = document.getElementById('comparison-section');
+        const progressText = document.getElementById('progress-text');
+        const originalCanvas = document.getElementById('original-canvas');
+        const enhancedCanvas = document.getElementById('enhanced-canvas');
+        const originalCtx = originalCanvas.getContext('2d');
+        const enhancedCtx = enhancedCanvas.getContext('2d');
+        
+        let originalImage = null;
+        let originalMetrics = {};
+
+        imageUpload.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                fileNameDisplay.textContent = file.name;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    originalImage = new Image();
+                    originalImage.onload = () => {
+                        originalCanvas.width = originalImage.width;
+                        originalCanvas.height = originalImage.height;
+                        enhancedCanvas.width = originalImage.width;
+                        enhancedCanvas.height = originalImage.height;
+                        
+                        originalCtx.drawImage(originalImage, 0, 0);
+                        
+                        progressSection.classList.remove('hidden');
+                        comparisonSection.classList.add('hidden');
+                        
+                        startAutoEnhancement();
+                    };
+                    originalImage.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        async function startAutoEnhancement() {
+            // Step 1: Analyze
+            updateProgress(1, 'Analyzing image quality...');
+            await sleep(800);
+            const imageData = originalCtx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
+            originalMetrics = analyzeImage(imageData);
+            displayOriginalMetrics(originalMetrics);
+            
+            // Step 2: Noise Reduction
+            updateProgress(2, 'Applying intelligent noise reduction...');
+            await sleep(1000);
+            const denoised = applyNoiseReduction(imageData);
+            
+            // Step 3: Contrast Enhancement
+            updateProgress(3, 'Enhancing contrast and brightness...');
+            await sleep(1000);
+            const contrasted = applyContrastEnhancement(denoised);
+            
+            // Step 4: Edge Correction
+            updateProgress(4, 'Correcting and sharpening edges...');
+            await sleep(1000);
+            const final = applyEdgeCorrection(contrasted);
+            
+            // Display results
+            enhancedCtx.putImageData(final, 0, 0);
+            const enhancedMetrics = analyzeImage(final);
+            displayEnhancedMetrics(enhancedMetrics);
+            displaySummary(originalMetrics, enhancedMetrics);
+            
+            progressSection.classList.add('hidden');
+            comparisonSection.classList.remove('hidden');
+        }
+
+        function updateProgress(step, text) {
+            for (let i = 1; i <= 4; i++) {
+                const stepEl = document.getElementById(`step-${i}`);
+                if (i < step) {
+                    stepEl.className = 'progress-step completed p-4 rounded-lg text-center';
+                } else if (i === step) {
+                    stepEl.className = 'progress-step active p-4 rounded-lg text-center';
+                } else {
+                    stepEl.className = 'progress-step bg-gray-200 p-4 rounded-lg text-center';
+                }
+            }
+            progressText.textContent = text;
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function analyzeImage(imageData) {
+            const data = imageData.data;
+            const width = imageData.width;
+            const height = imageData.height;
+            
+            // Contrast analysis
+            let min = 255, max = 0, sum = 0;
+            const grayscale = [];
+            
+            for (let i = 0; i < data.length; i += 4) {
+                const gray = (data[i] + data[i+1] + data[i+2]) / 3;
+                grayscale.push(gray);
+                min = Math.min(min, gray);
+                max = Math.max(max, gray);
+                sum += gray;
+            }
+            
+            const mean = sum / grayscale.length;
+            const variance = grayscale.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / grayscale.length;
+            const stdDev = Math.sqrt(variance);
+            const contrastScore = Math.min(100, (stdDev / 50) * 100);
+            
+            // Noise analysis
+            let totalVariance = 0, count = 0;
+            for (let y = 1; y < height - 1; y += 10) {
+                for (let x = 1; x < width - 1; x += 10) {
+                    const idx = (y * width + x) * 4;
+                    const center = (data[idx] + data[idx+1] + data[idx+2]) / 3;
+                    let localSum = 0;
+                    for (let dy = -1; dy <= 1; dy++) {
+                        for (let dx = -1; dx <= 1; dx++) {
+                            const nIdx = ((y+dy) * width + (x+dx)) * 4;
+                            const neighbor = (data[nIdx] + data[nIdx+1] + data[nIdx+2]) / 3;
+                            localSum += Math.pow(neighbor - center, 2);
+                        }
+                    }
+                    totalVariance += localSum / 9;
+                    count++;
+                }
+            }
+            const noiseScore = Math.min(100, (totalVariance / count / 100) * 100);
+            
+            // Edge analysis
+            let strongEdges = 0, totalSamples = 0;
+            for (let y = 1; y < height - 1; y += 5) {
+                for (let x = 1; x < width - 1; x += 5) {
+                    const idx = y * width + x;
+                    const gx = Math.abs(grayscale[idx+1] - grayscale[idx-1]);
+                    const gy = Math.abs(grayscale[idx+width] - grayscale[idx-width]);
+                    const magnitude = Math.sqrt(gx*gx + gy*gy);
+                    if (magnitude > 30) strongEdges++;
+                    totalSamples++;
+                }
+            }
+            const edgeScore = (strongEdges / totalSamples) * 100;
+            
+            return { contrastScore, noiseScore, edgeScore };
+        }
+
+        function applyNoiseReduction(imageData) {
+            const data = new Uint8ClampedArray(imageData.data);
+            const width = imageData.width;
+            const height = imageData.height;
+            const result = new Uint8ClampedArray(data);
+            
+            for (let y = 1; y < height - 1; y++) {
+                for (let x = 1; x < width - 1; x++) {
+                    const idx = (y * width + x) * 4;
+                    
+                    // Calculate local variance
+                    let variance = 0, count = 0;
+                    const centerGray = (data[idx] + data[idx+1] + data[idx+2]) / 3;
+                    
+                    for (let dy = -1; dy <= 1; dy++) {
+                        for (let dx = -1; dx <= 1; dx++) {
+                            const nIdx = ((y+dy) * width + (x+dx)) * 4;
+                            const nGray = (data[nIdx] + data[nIdx+1] + data[nIdx+2]) / 3;
+                            variance += Math.pow(nGray - centerGray, 2);
+                            count++;
+                        }
+                    }
+                    variance /= count;
+                    
+                    // Fuzzy noise classification
+                    const noiseLevel = Math.min(1, variance / 500);
+                    
+                    if (noiseLevel > 0.3) {
+                        // Apply weighted average smoothing
+                        let r = 0, g = 0, b = 0, totalWeight = 0;
+                        for (let dy = -1; dy <= 1; dy++) {
+                            for (let dx = -1; dx <= 1; dx++) {
+                                const nIdx = ((y+dy) * width + (x+dx)) * 4;
+                                const weight = 1 / (Math.abs(dx) + Math.abs(dy) + 1);
+                                r += data[nIdx] * weight;
+                                g += data[nIdx+1] * weight;
+                                b += data[nIdx+2] * weight;
+                                totalWeight += weight;
+                            }
+                        }
+                        const smoothing = noiseLevel * 0.7;
+                        result[idx] = data[idx] * (1 - smoothing) + (r / totalWeight) * smoothing;
+                        result[idx+1] = data[idx+1] * (1 - smoothing) + (g / totalWeight) * smoothing;
+                        result[idx+2] = data[idx+2] * (1 - smoothing) + (b / totalWeight) * smoothing;
+                    }
+                }
+            }
+            
+            return new ImageData(result, width, height);
+        }
+
+        function applyContrastEnhancement(imageData) {
+            const data = new Uint8ClampedArray(imageData.data);
+            const result = new Uint8ClampedArray(data);
+            
+            for (let i = 0; i < data.length; i += 4) {
+                const gray = (data[i] + data[i+1] + data[i+2]) / 3;
+                
+                // Fuzzy membership functions
+                const darkMembership = Math.max(0, Math.min(1, (127 - gray) / 127));
+                const mediumMembership = gray < 85 ? 0 : gray < 127 ? (gray - 85) / 42 : gray < 170 ? (170 - gray) / 43 : 0;
+                const brightMembership = Math.max(0, Math.min(1, (gray - 127) / 128));
+                
+                // Enhanced outputs
+                const darkOut = 25, mediumOut = 140, brightOut = 230;
+                const total = darkMembership + mediumMembership + brightMembership;
+                const enhancedGray = total > 0 ? 
+                    (darkMembership * darkOut + mediumMembership * mediumOut + brightMembership * brightOut) / total : gray;
+                
+                // Apply enhancement while preserving color ratios
+                const ratio = enhancedGray / (gray + 0.001);
+                result[i] = Math.min(255, Math.max(0, data[i] * ratio));
+                result[i+1] = Math.min(255, Math.max(0, data[i+1] * ratio));
+                result[i+2] = Math.min(255, Math.max(0, data[i+2] * ratio));
+            }
+            
+            return new ImageData(result, imageData.width, imageData.height);
+        }
+
+        function applyEdgeCorrection(imageData) {
+            const data = new Uint8ClampedArray(imageData.data);
+            const width = imageData.width;
+            const height = imageData.height;
+            const result = new Uint8ClampedArray(data);
+            
+            // Convert to grayscale for edge detection
+            const gray = new Array(width * height);
+            for (let i = 0; i < data.length; i += 4) {
+                gray[i / 4] = (data[i] + data[i+1] + data[i+2]) / 3;
+            }
+            
+            // Detect and correct edges
+            for (let y = 2; y < height - 2; y++) {
+                for (let x = 2; x < width - 2; x++) {
+                    const idx = y * width + x;
+                    const pixelIdx = idx * 4;
+                    
+                    // Sobel edge detection
+                    const gx = (-gray[(y-1)*width+(x-1)] + gray[(y-1)*width+(x+1)] +
+                               -2*gray[y*width+(x-1)] + 2*gray[y*width+(x+1)] +
+                               -gray[(y+1)*width+(x-1)] + gray[(y+1)*width+(x+1)]);
+                    const gy = (-gray[(y-1)*width+(x-1)] - 2*gray[(y-1)*width+x] - gray[(y-1)*width+(x+1)] +
+                               gray[(y+1)*width+(x-1)] + 2*gray[(y+1)*width+x] + gray[(y+1)*width+(x+1)]);
+                    const magnitude = Math.sqrt(gx*gx + gy*gy);
+                    
+                    // Fuzzy edge classification
+                    const weakEdge = magnitude > 20 && magnitude < 60;
+                    
+                    if (weakEdge) {
+                        // Sharpen weak edges
+                        const sharpen = 0.3;
+                        for (let c = 0; c < 3; c++) {
+                            const center = data[pixelIdx + c];
+                            let sum = 0;
+                            for (let dy = -1; dy <= 1; dy++) {
+                                for (let dx = -1; dx <= 1; dx++) {
+                                    if (dx === 0 && dy === 0) continue;
+                                    sum += data[((y+dy)*width+(x+dx))*4 + c];
+                                }
+                            }
+                            const avg = sum / 8;
+                            result[pixelIdx + c] = Math.min(255, Math.max(0, center + (center - avg) * sharpen));
+                        }
+                    }
+                }
+            }
+            
+            return new ImageData(result, width, height);
+        }
+
+        function displayOriginalMetrics(metrics) {
+            document.getElementById('orig-contrast').textContent = Math.round(metrics.contrastScore) + '%';
+            document.getElementById('orig-noise').textContent = Math.round(metrics.noiseScore) + '%';
+            document.getElementById('orig-edges').textContent = Math.round(metrics.edgeScore) + '%';
+        }
+
+        function displayEnhancedMetrics(metrics) {
+            document.getElementById('enh-contrast').textContent = Math.round(metrics.contrastScore) + '%';
+            document.getElementById('enh-noise').textContent = Math.round(metrics.noiseScore) + '%';
+            document.getElementById('enh-edges').textContent = Math.round(metrics.edgeScore) + '%';
+        }
+
+        function displaySummary(original, enhanced) {
+            const summary = document.getElementById('summary-content');
+            const improvements = [];
+            
+            const contrastDiff = enhanced.contrastScore - original.contrastScore;
+            const noiseDiff = original.noiseScore - enhanced.noiseScore;
+            const edgeDiff = enhanced.edgeScore - original.edgeScore;
+            
+            if (contrastDiff > 5) {
+                improvements.push(`✅ Contrast improved by ${Math.round(contrastDiff)}%`);
+            }
+            if (noiseDiff > 5) {
+                improvements.push(`✅ Noise reduced by ${Math.round(noiseDiff)}%`);
+            }
+            if (edgeDiff > 5) {
+                improvements.push(`✅ Edge quality improved by ${Math.round(edgeDiff)}%`);
+            }
+            
+            if (improvements.length === 0) {
+                improvements.push('✅ Image quality optimized and balanced');
+            }
+            
+            summary.innerHTML = improvements.map(imp => `<p>${imp}</p>`).join('');
+        }
+
+        document.getElementById('download-btn').addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'ai_enhanced_image.png';
+            link.href = enhancedCanvas.toDataURL();
+            link.click();
+        });
+    </script>
+</body>
+</html>
